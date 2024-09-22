@@ -14,18 +14,16 @@
  * Struct for settings
  */
 typedef struct {
+    uint16_t max_itrs; /* Maximum number of Mandelbrot iterations to make */
+    int num_chnks_re;  /* Number of chunks in real direction */
+    int num_chnks_im;  /* Number of chunks in imaginary direction */
+    double zoom_fac;   /* Factor for one zoom stage */
     int width;         /* Width of window in pixels */
     int height;        /* Height of window in pixels */
-    double max_absval; /* Maximum absolute value to cut Mandelbrot iteration */
-    uint16_t max_itrs; /* Maximum number of Mandelbrot iterations to make*/
     double max_re;     /* Maximum value of real part */
     double min_re;     /* Maximum value of imaginary part */
     double cntr_re;    /* Real part of centre point of window */
     double cntr_im;    /* Imaginary part of centre point of window */
-    double zoom_fac;   /* Factor for one zoom stage */
-    int num_chnks_re;  /* Number of chunks in real direction */
-    int num_chnks_im;  /* Number of chunks in imaginary direction */
-    unsigned long int prec; /* Precision for GMP */
 } Settings;
 
 /**

@@ -7,35 +7,29 @@
 
 #include "log.h"
 
+#define DEFAULT_MAXIMUM_ITERATIONS UINT16_C(500)
+#define DEFAULT_NUMBER_CHUNKS_REAL 10
+#define DEFAULT_NUMBER_CHUNKS_IMAG 10
+#define DEFAULT_ZOOM_FACTOR 0.5
+
 #define DEFAULT_WIDTH 800
 #define DEFAULT_HEIGHT 600
-#define DEFAULT_MAXIMUM_ABSOLUTE_VALUE 2.0
-#define DEFAULT_MAXIMUM_ITERATIONS UINT16_C(500)
-
 #define DEFAULT_MAXIMUM_REAL 1.0
 #define DEFAULT_MINIMUM_REAL -2.0
 #define DEFAULT_CENTRE_REAL -0.5
 #define DEFAULT_CENTRE_IMAG 0.0
 
-#define DEFAULT_ZOOM_SPEED 0.5
-#define DEFAULT_NUMBER_CHUNKS_REAL 10
-#define DEFAULT_NUMBER_CHUNKS_IMAG 10
-
-#define DEFAULT_PRECISION 128UL
-
 static Settings _global_settings = {
+  .max_itrs = DEFAULT_MAXIMUM_ITERATIONS,
+  .num_chnks_re = DEFAULT_NUMBER_CHUNKS_REAL,
+  .num_chnks_im = DEFAULT_NUMBER_CHUNKS_IMAG,
+  .zoom_fac = DEFAULT_ZOOM_FACTOR,
   .width = DEFAULT_WIDTH,
   .height = DEFAULT_HEIGHT,
-  .max_absval = DEFAULT_MAXIMUM_ABSOLUTE_VALUE,
-  .max_itrs = DEFAULT_MAXIMUM_ITERATIONS,
   .max_re = DEFAULT_MAXIMUM_REAL,
   .min_re = DEFAULT_MINIMUM_REAL,
   .cntr_re = DEFAULT_CENTRE_REAL,
   .cntr_im = DEFAULT_CENTRE_IMAG,
-  .zoom_fac = DEFAULT_ZOOM_SPEED,
-  .num_chnks_re = DEFAULT_NUMBER_CHUNKS_REAL,
-  .num_chnks_im = DEFAULT_NUMBER_CHUNKS_IMAG,
-  .prec = DEFAULT_PRECISION,
 };
 
 const Settings *const GLOBAL_SETTINGS = &_global_settings;
@@ -46,9 +40,7 @@ _cJSON_read(const char *str)
     cJSON *const json = cJSON_Parse(str);
     if (json == NULL) {
         const char *errptr = cJSON_GetErrorPtr();
-        log_message(
-          LOG_ERROR, "Error while reading JSON before '%s'!\n", errptr
-        );
+        log_err("Error while reading JSON before '%s'!\n", errptr);
     }
     return json;
 }
@@ -62,12 +54,12 @@ _file_to_str(FILE *in)
 
     char *const fstr = malloc(fsize * sizeof *fstr);
     if (fstr == NULL) {
-        log_message(LOG_ERROR, "Cannot allocate memory for copy of file!\n");
+        log_err("Cannot allocate memory for copy of file!\n");
         return NULL;
     }
     const size_t size = fread(fstr, 1UL, fsize, in);
     if (size != (size_t) fsize - 1) {
-        log_message(LOG_ERROR, "Cannot copy contents of file!\n");
+        log_err("Cannot copy contents of file!\n");
         free(fstr);
         return NULL;
     }
@@ -87,18 +79,17 @@ _settings_from_cJSON(Settings *settings, cJSON *json)
         }                                                                      \
     } while (0)
 
+    JSON_TO_MEMBER(max_itrs);
+    JSON_TO_MEMBER(num_chnks_re);
+    JSON_TO_MEMBER(num_chnks_im);
+    JSON_TO_MEMBER(zoom_fac);
+
     JSON_TO_MEMBER(width);
     JSON_TO_MEMBER(height);
-    JSON_TO_MEMBER(max_absval);
-    JSON_TO_MEMBER(max_itrs);
     JSON_TO_MEMBER(max_re);
     JSON_TO_MEMBER(min_re);
     JSON_TO_MEMBER(cntr_re);
     JSON_TO_MEMBER(cntr_im);
-    JSON_TO_MEMBER(zoom_fac);
-    JSON_TO_MEMBER(num_chnks_re);
-    JSON_TO_MEMBER(num_chnks_im);
-    JSON_TO_MEMBER(prec);
 
 #undef JSON_TO_MEMBER
 }
@@ -136,7 +127,7 @@ Settings_read(Settings *settings, const char *fname)
 {
     FILE *const in = fopen(fname, "r");
     if (in == NULL) {
-        log_message(LOG_ERROR, "Cannot open file '%s'!\n", fname);
+        log_err("Cannot open file '%s'!\n", fname);
         return;
     }
     Settings_fread(settings, in);
@@ -160,24 +151,23 @@ _cJSON_from_settings(const Settings *settings)
         cJSON_AddItemToObject(json, #member, item);                            \
     } while (0)
 
+    MEMBER_TO_JSON(max_itrs);
+    MEMBER_TO_JSON(num_chnks_re);
+    MEMBER_TO_JSON(num_chnks_im);
+    MEMBER_TO_JSON(zoom_fac);
+
     MEMBER_TO_JSON(width);
     MEMBER_TO_JSON(height);
-    MEMBER_TO_JSON(max_absval);
-    MEMBER_TO_JSON(max_itrs);
     MEMBER_TO_JSON(max_re);
     MEMBER_TO_JSON(min_re);
     MEMBER_TO_JSON(cntr_re);
     MEMBER_TO_JSON(cntr_im);
-    MEMBER_TO_JSON(zoom_fac);
-    MEMBER_TO_JSON(num_chnks_re);
-    MEMBER_TO_JSON(num_chnks_im);
-    MEMBER_TO_JSON(prec);
 
 #undef MEMBER_TO_JSON
 
     return json;
 err:
-    log_message(LOG_ERROR, "Error while creating JSON!\n");
+    log_err("Error while creating JSON!\n");
     cJSON_Delete(json);
     return NULL;
 }
@@ -210,7 +200,7 @@ Settings_write(const Settings *settings, const char *fname)
 {
     FILE *const out = fopen(fname, "w");
     if (out == NULL) {
-        log_message(LOG_ERROR, "Cannot open file '%s'!\n", fname);
+        log_err("Cannot open file '%s'!\n", fname);
         return;
     }
     Settings_fwrite(settings, out);

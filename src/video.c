@@ -6,99 +6,88 @@
 
 #include "color.h"
 #include "data.h"
+#include "log.h"
 #include "settings.h"
+#include "sys.h"
 
-#define FPS UINT64_C(30)
+#define FPS UINT8_C(30)
 
-/**
- * Global video object
- */
-static struct {
+typedef struct {
+    const Settings *settings;
     SDL_Window *window;
     SDL_Surface *surface;
     SDL_Surface *image;
-    bool do_redraw;
     Palette_fnc *palette;
-} *_video = NULL;
+} _videoData;
 
-void
-Video_init(void)
+static void
+_videoData_free(_videoData *video)
 {
-    if (_video != NULL) {
+    if (video == NULL) {
         return;
     }
 
-    _video = malloc(sizeof *_video);
+    SDL_FreeSurface(video->image);
+    SDL_FreeSurface(video->surface);
+    SDL_DestroyWindow(video->window);
 
-    _video->window = NULL;
-    _video->surface = NULL;
-    _video->image = NULL;
-    _video->do_redraw = true;
-    _video->palette = &Palette_exp_hsv;
+    free(video);
+}
 
-    ImageData_init();
+static _videoData *
+_videoData_alloc(const Settings *settings)
+{
+    _videoData *const video = malloc(sizeof *video);
 
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
-        Video_quit();
-        return;
-    }
+    video->settings = settings;
+    video->window = NULL;
+    video->surface = NULL;
+    video->image = NULL;
+    video->palette = &Palette_exp_hsv;
 
-    const int width = GLOBAL_SETTINGS->width;
-    const int height = GLOBAL_SETTINGS->height;
+    const int width = settings->width;
+    const int height = settings->height;
 
-    _video->window = SDL_CreateWindow(
+    video->window = SDL_CreateWindow(
       "mandelbrot", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width,
       height, SDL_WINDOW_SHOWN
     );
-
-    if (_video->window == NULL) {
-        printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
-        Video_quit();
-        return;
+    if (video->window == NULL) {
+        log_err("Window could not be created! SDL_Error: %s\n", SDL_GetError());
+        _videoData_free(video);
+        return NULL;
     }
-    _video->surface = SDL_GetWindowSurface(_video->window);
+    video->surface = SDL_GetWindowSurface(video->window);
+    video->image = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
 
-    _video->image = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
-}
-
-void
-Video_quit(void)
-{
-    if (_video == NULL) {
-        return;
-    }
-
-    SDL_FreeSurface(_video->image);
-    SDL_FreeSurface(_video->surface);
-    SDL_DestroyWindow(_video->window);
-
-    SDL_Quit();
-
-    ImageData_free();
-
-    free(_video);
-    _video = NULL;
+    return video;
 }
 
 static void
-_draw_image(void)
+_videoData_draw_image(_videoData *video)
 {
-    SDL_LockSurface(_video->image);
+    SDL_BlitSurface(video->image, NULL, video->surface, NULL);
+}
 
-    const int width = GLOBAL_SETTINGS->width;
-    const int height = GLOBAL_SETTINGS->height;
+static void
+_videoData_write_framebuffer(_videoData *video)
+{
+    SDL_LockSurface(video->image);
+
+    const Settings *const settings = video->settings;
+    const int width = settings->width;
+    const int height = settings->height;
 
     const float *const pxdata = ImageData_get_pixel_data();
-    uint32_t *const buf = _video->image->pixels;
+    uint32_t *const buf = video->image->pixels;
+#pragma omp parallel for collapse(2)
     for (int i = 0; i < width; ++i) {
         for (int j = 0; j < height; ++j) {
-            buf[j * width + i] = _video->palette(pxdata[i * height + j]);
+            buf[j * width + i] = video->palette(pxdata[i * height + j]);
         }
     }
 
-    SDL_UnlockSurface(_video->image);
-    SDL_BlitSurface(_video->image, NULL, _video->surface, NULL);
+    SDL_UnlockSurface(video->image);
 }
 
 static inline enum Key
@@ -132,31 +121,73 @@ _keymap(SDL_Keycode sdl_key)
     }
 }
 
-void
-Video_loop(void)
+static void
+_videoData_loop(_videoData *video)
 {
-    SDL_Event e;
+    _videoData_write_framebuffer(video);
+    SDL_Event event;
     for (;;) {
-        if (_video->do_redraw) {
-            _draw_image();
-            _video->do_redraw = false;
+        _videoData_draw_image(video);
+        SDL_UpdateWindowSurface(video->window);
+        const int has_events = SDL_PollEvent(&event);
+        if (has_events == 0) {
+            msleep(1000 / FPS);
+            continue;
         }
-        SDL_UpdateWindowSurface(_video->window);
-        while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT) {
+        SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
+        if (event.type == SDL_QUIT) {
+            return;
+        } else if (event.type == SDL_KEYDOWN) {
+            const SDL_Keycode keycode = event.key.keysym.sym;
+            switch (keycode) {
+            case SDLK_ESCAPE:
+            case SDLK_q:
                 return;
-            } else if (e.type == SDL_KEYDOWN) {
-                switch (e.key.keysym.sym) {
-                case SDLK_ESCAPE:
-                case SDLK_q:
-                    return;
-                default: {
-                    const enum Key key = _keymap(e.key.keysym.sym);
-                    ImageData_action(key);
-                    _video->do_redraw = true;
-                } break;
+            default: {
+                const enum Key key = _keymap(keycode);
+                const int rewrite_framebuffer = ImageData_action(key);
+                if (rewrite_framebuffer != 0) {
+                    _videoData_write_framebuffer(video);
                 }
+            } break;
             }
         }
     }
+}
+
+/**
+ * Global Video object
+ */
+static _videoData *_video = NULL;
+
+void
+Video_init(void)
+{
+    if (_video != NULL) {
+        return;
+    }
+
+    ImageData_init();
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        log_err("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
+        Video_quit();
+        return;
+    }
+
+    _video = _videoData_alloc(GLOBAL_SETTINGS);
+}
+
+void
+Video_quit(void)
+{
+    _videoData_free(_video);
+    _video = NULL;
+    SDL_Quit();
+    ImageData_free();
+}
+
+void
+Video_loop(void)
+{
+    _videoData_loop(_video);
 }

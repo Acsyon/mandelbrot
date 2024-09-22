@@ -1,9 +1,13 @@
+/* log.h
+ *
+ * Header for logging stuff
+ *
+ */
+
 #ifndef LOG_H_INCLUDED
 #define LOG_H_INCLUDED
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <stdio.h>
 
 /**
  * Log level enumerator
@@ -17,22 +21,38 @@ enum LogLevel {
 /**
  * Gets the current minimum log level to display.
  *
- * @param[in] level Minimum log level to display
- *
  * @return current minimum log level
  */
 enum LogLevel
-get_log_level(void);
+log_get_level(void);
 
 /**
  * Sets the minimum log level to display.
  *
- * @param[in] level Minimum log level to display
+ * @param[in] level new minimum log level
  *
- * @return old log level
+ * @return old minimum log level
  */
 enum LogLevel
-set_log_level(enum LogLevel level);
+log_set_level(enum LogLevel level);
+
+/**
+ * Gets the current log stream.
+ *
+ * @return current log stream
+ */
+FILE *
+log_get_stream(void);
+
+/**
+ * Sets the log stream.
+ *
+ * @param[in] stream new log stream
+ *
+ * @return old log stream
+ */
+FILE *
+log_set_stream(FILE *stream);
 
 /**
  * Prints formatted message `format` to log stream prepended with level token if
@@ -42,10 +62,30 @@ set_log_level(enum LogLevel level);
  * @param[in] format printf-like format string
  */
 void
-log_message(enum LogLevel level, const char *format, ...);
+log_msg(enum LogLevel level, const char *format, ...);
 
-#ifdef __cplusplus
-}
-#endif
+/**
+ * Prints formatted message `format` to log stream for level LOG_DEBUG.
+ *
+ * @param[in] format printf-like format string
+ */
+void
+log_dbg(const char *format, ...);
+
+/**
+ * Prints formatted message `format` to log stream for level LOG_WARNING.
+ *
+ * @param[in] format printf-like format string
+ */
+void
+log_wrn(const char *format, ...);
+
+/**
+ * Prints formatted message `format` to log stream for level LOG_ERROR.
+ *
+ * @param[in] format printf-like format string
+ */
+void
+log_err(const char *format, ...);
 
 #endif /* LOG_H_INCLUDED */

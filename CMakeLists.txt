@@ -70,6 +70,7 @@ set(SOURCE_FILES
     src/data.c
     src/log.c
     src/settings.c
+    src/sys.c
     src/video.c
 )
 

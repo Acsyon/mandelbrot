@@ -10,7 +10,9 @@
 
 #include "settings.h"
 
+#define INITIAL_PRECISION GMP_LIMB_BITS
 #define PERIODICITY_CHECK_CYCLE_LENGTH 25
+#define ITERATION_CUTOFF_ABSOLUTE_VALUE 2.0
 
 /**
  * Possible data (pixel and chunk) states. Not all apply to all.
@@ -46,6 +48,13 @@ _pixelData_clear(_pixelData *px)
 {
     mpf_clear(px->re);
     mpf_clear(px->im);
+}
+
+static void
+_pixelData_set_prec(_pixelData *px, mp_bitcnt_t prec)
+{
+    mpf_set_prec(px->re, prec);
+    mpf_set_prec(px->im, prec);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -91,6 +100,20 @@ _pixelDataBuffer_clear(_pixelDataBuffer *buf)
     mpf_clear(buf->re_old);
     mpf_clear(buf->im_old);
     mpf_clear(buf->tmp);
+}
+
+static void
+_pixelDataBuffer_set_prec(_pixelDataBuffer *buf, mp_bitcnt_t prec)
+{
+    mpf_set_prec(buf->re, prec);
+    mpf_set_prec(buf->im, prec);
+    mpf_set_prec(buf->re_sqr, prec);
+    mpf_set_prec(buf->im_sqr, prec);
+    mpf_set_prec(buf->abs_sqr, prec);
+    mpf_set_prec(buf->max_sqr, prec);
+    mpf_set_prec(buf->re_old, prec);
+    mpf_set_prec(buf->im_old, prec);
+    mpf_set_prec(buf->tmp, prec);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -253,11 +276,13 @@ _chunkData_clear(_chunkData *chunks)
  */
 typedef struct {
     Settings settings;
+    mp_bitcnt_t prec;
     mpf_t upp;
     mpf_t cntr_re;
     mpf_t cntr_im;
     mpf_t action_buf;
     _pixelData *data;
+    int tnum;
     _pixelDataBuffer *tbuf;
     _chunkData chunks;
     float *framebuf;
@@ -296,13 +321,11 @@ _imageData_init_data(_imageData *imgdata)
 static void
 _imageData_init_tbuf(_imageData *imgdata)
 {
-    const Settings *const settings = &imgdata->settings;
-
-    const int tnum = omp_get_max_threads();
+    const int tnum = imgdata->tnum = omp_get_max_threads();
     imgdata->tbuf = malloc(tnum * sizeof *imgdata->tbuf);
 
     mpf_t max_sqr;
-    mpf_init_set_d(max_sqr, settings->max_absval);
+    mpf_init_set_d(max_sqr, ITERATION_CUTOFF_ABSOLUTE_VALUE);
     mpf_mul(max_sqr, max_sqr, max_sqr);
     for (int i = 0; i < tnum; ++i) {
         _pixelDataBuffer *const buf = &imgdata->tbuf[i];
@@ -327,7 +350,8 @@ _imageData_alloc(const Settings *settings)
     _imageData *const imgdata = malloc(sizeof *imgdata);
 
     imgdata->settings = *settings;
-    mpf_set_default_prec(settings->prec);
+    imgdata->prec = INITIAL_PRECISION;
+    mpf_set_default_prec(INITIAL_PRECISION);
 
     _imageData_init_mpf(imgdata);
     _imageData_init_view(imgdata);
@@ -362,7 +386,7 @@ _imageData_clear_data(_imageData *imgdata)
 static void
 _imageData_clear_tbuf(_imageData *imgdata)
 {
-    const int tnum = omp_get_max_threads();
+    const int tnum = imgdata->tnum;
     for (int i = 0; i < tnum; ++i) {
         _pixelDataBuffer_clear(&imgdata->tbuf[i]);
     }
@@ -383,6 +407,47 @@ _imageData_clear(_imageData *imgdata)
     _imageData_clear_data(imgdata);
     _imageData_clear_tbuf(imgdata);
     _imageData_clear_chunks(imgdata);
+}
+
+static void
+_imageData_set_prec_mpf(_imageData *imgdata)
+{
+    const mp_bitcnt_t prec = imgdata->prec;
+    mpf_set_prec(imgdata->upp, prec);
+    mpf_set_prec(imgdata->cntr_re, prec);
+    mpf_set_prec(imgdata->cntr_im, prec);
+    mpf_set_prec(imgdata->action_buf, prec);
+}
+
+static void
+_imageData_set_prec_data(_imageData *imgdata)
+{
+    const Settings *const settings = &imgdata->settings;
+    const int num_tot = settings->width * settings->height;
+    const mp_bitcnt_t prec = imgdata->prec;
+    for (int i = 0; i < num_tot; ++i) {
+        _pixelData_set_prec(&imgdata->data[i], prec);
+    }
+}
+
+static void
+_imageData_set_prec_tbuf(_imageData *imgdata)
+{
+    const mp_bitcnt_t prec = imgdata->prec;
+    const int tnum = imgdata->tnum;
+    for (int i = 0; i < tnum; ++i) {
+        _pixelDataBuffer *const buf = &imgdata->tbuf[i];
+        _pixelDataBuffer_set_prec(buf, prec);
+    }
+}
+
+static void
+_imageData_set_prec(_imageData *imgdata, mp_bitcnt_t prec)
+{
+    imgdata->prec = prec;
+    _imageData_set_prec_mpf(imgdata);
+    _imageData_set_prec_data(imgdata);
+    _imageData_set_prec_tbuf(imgdata);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -559,6 +624,28 @@ _pixelChunk_callback_zoom(
     _pixelChunk_invalidate_all(chunk, imgdata);
 }
 
+static mp_bitcnt_t
+_calculate_new_prec(mpf_srcptr upp)
+{
+    static const mp_bitcnt_t MIN_PREC = GMP_LIMB_BITS;
+    static const mp_bitcnt_t MAX_PREC = GMP_LIMB_BITS * 1024;
+    static const mp_bitcnt_t MAX_DIFF = GMP_LIMB_BITS / 4;
+
+    long int exp = 0;
+    (void) mpf_get_d_2exp(&exp, upp);
+    exp = labs(exp);
+
+    const mp_bitcnt_t new_prec
+      = ((exp + MAX_DIFF + GMP_LIMB_BITS) / GMP_LIMB_BITS) * GMP_LIMB_BITS;
+    if (new_prec < MIN_PREC) {
+        return MIN_PREC;
+    }
+    if (new_prec > MAX_PREC) {
+        return MAX_PREC;
+    }
+    return new_prec;
+}
+
 static void
 _imageData_zoom(_imageData *imgdata, int stages)
 {
@@ -569,6 +656,11 @@ _imageData_zoom(_imageData *imgdata, int stages)
     mpf_set_d(buf, settings->zoom_fac);
     for (int i = 0; i < abs(stages); ++i) {
         (stages > 0) ? mpf_mul(upp, upp, buf) : mpf_div(upp, upp, buf);
+    }
+
+    const mp_bitcnt_t new_prec = _calculate_new_prec(upp);
+    if (new_prec != imgdata->prec) {
+        _imageData_set_prec(imgdata, new_prec);
     }
 
     _pixelChunk_callback *const callback = &_pixelChunk_callback_zoom;
@@ -638,6 +730,7 @@ _imageData_update_framebuffer(_imageData *imgdata)
     const int num_px_re = params->num_px_re;
     const int num_px_im = params->num_px_im;
 
+#pragma omp parallel for
     for (int idx_chnk = 0; idx_chnk < num_chnks_tot; ++idx_chnk) {
         const _pixelChunk *const chunk = &chunks->data[idx_chnk];
         for (int idx_px_re = 0; idx_px_re < num_px_re; ++idx_px_re) {
@@ -684,7 +777,7 @@ _imageData_free(_imageData *imgdata)
     free(imgdata);
 }
 
-static inline void
+static inline int
 _imageData_action(_imageData *imgdata, enum Key key)
 {
     switch (key) {
@@ -711,9 +804,10 @@ _imageData_action(_imageData *imgdata, enum Key key)
     } break;
     case KEY_INVALID:
     default:
-        return;
+        return 0;
     }
     _imageData_update_pixels(imgdata);
+    return 1;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -739,10 +833,10 @@ ImageData_free(void)
     _imgdata = NULL;
 }
 
-void
+int
 ImageData_action(enum Key key)
 {
-    _imageData_action(_imgdata, key);
+    return _imageData_action(_imgdata, key);
 }
 
 const float *

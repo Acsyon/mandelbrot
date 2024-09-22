@@ -34,11 +34,14 @@ enum Key {
 };
 
 /**
- * Perform global ImageData object according to keypress in `key`.
+ * Performs global ImageData object according to keypress in `key`. Returns
+ * nonzero value if an action has been performed.
  *
  * @param[in] key pressed key
+ *
+ * @return nonzero value if an action has been performed
  */
-void
+int
 ImageData_action(enum Key key);
 
 /**

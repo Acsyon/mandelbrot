@@ -1,25 +1,19 @@
 #include "log.h"
 
-#include <stdbool.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 
-static enum LogLevel _minimum_log_level = LOG_WARNING;
+#define DEFAULT_LOG_STREAM stderr
 
-static inline const char *
-_get_level_string(enum LogLevel level)
-{
-    switch (level) {
-    case LOG_DEBUG:
-        return "DBG";
-    case LOG_WARNING:
-        return "WRN";
-    case LOG_ERROR:
-        return "ERR";
-    default:
-        return "";
-    }
-}
+static FILE *_log_stream = NULL;
+static enum LogLevel _log_level = LOG_WARNING;
+
+static const char *const LEVEL_STRING[] = {
+  [LOG_DEBUG] = "DBG",
+  [LOG_WARNING] = "WRN",
+  [LOG_ERROR] = "ERR",
+};
 
 static inline bool
 _is_level_valid(enum LogLevel level)
@@ -28,40 +22,87 @@ _is_level_valid(enum LogLevel level)
 }
 
 enum LogLevel
-get_log_level(void)
+log_get_level(void)
 {
-    return _minimum_log_level;
+    return _log_level;
 }
 
 enum LogLevel
-set_log_level(enum LogLevel level)
+log_set_level(enum LogLevel level)
 {
     if (!_is_level_valid(level)) {
-        log_message(LOG_WARNING, "Cannot change log level: invalid value!\n");
-        return _minimum_log_level;
+        log_wrn("Cannot change log level: invalid value!\n");
+        return _log_level;
     }
-    enum LogLevel old_level = _minimum_log_level;
-    _minimum_log_level = level;
+    enum LogLevel old_level = _log_level;
+    _log_level = level;
     return old_level;
 }
 
-void
-log_message(enum LogLevel level, const char *format, ...)
+FILE *
+log_get_stream(void)
 {
-    FILE *const log = stderr;
+    return _log_stream;
+}
 
+FILE *
+log_set_stream(FILE *stream)
+{
+    FILE *old_stream = _log_stream;
+    _log_stream = stream;
+    return old_stream;
+}
+
+static void
+_log_vmsg(enum LogLevel level, const char *format, va_list args)
+{
+    if (_log_stream == NULL) {
+        _log_stream = DEFAULT_LOG_STREAM;
+    }
     if (!_is_level_valid(level)) {
         return;
     }
-    if (level < _minimum_log_level) {
+    if (level < _log_level) {
         return;
     }
 
-    const char *const lvlstr = _get_level_string(level);
-    fprintf(log, "[%s] ", lvlstr);
+    const char *const lvlstr = LEVEL_STRING[level];
+    fprintf(_log_stream, "[%s] ", lvlstr);
+    vfprintf(_log_stream, format, args);
+}
 
+void
+log_msg(enum LogLevel level, const char *format, ...)
+{
     va_list args;
     va_start(args, format);
-    vfprintf(log, format, args);
+    _log_vmsg(level, format, args);
+    va_end(args);
+}
+
+void
+log_dbg(const char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    _log_vmsg(LOG_DEBUG, format, args);
+    va_end(args);
+}
+
+void
+log_wrn(const char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    _log_vmsg(LOG_WARNING, format, args);
+    va_end(args);
+}
+
+void
+log_err(const char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    _log_vmsg(LOG_ERROR, format, args);
     va_end(args);
 }
