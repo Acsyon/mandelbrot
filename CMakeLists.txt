@@ -56,10 +56,18 @@ if (GMP_FOUND)
     link_libraries(${GMP_LIBRARIES})
 endif ()
 
+# Include cJSON
+find_package(cJSON REQUIRED)
+if (CJSON_UTILS_FOUND)
+    include_directories(${CJSON_INCLUDE_DIRS})
+    link_libraries(${CJSON_LIBRARIES})
+endif ()
+
 # Set source files
 set(SOURCE_FILES
     src/main.c
     src/data.c
+    src/log.c
     src/settings.c
     src/video.c
 )
