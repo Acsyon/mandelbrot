@@ -222,3 +222,12 @@ Settings_free(Settings *settings)
 
     free(settings);
 }
+
+double
+Settings_get_resolution(const Settings *settings)
+{
+    const int width = settings->width;
+    const double max_re = settings->max_re;
+    const double min_re = settings->min_re;
+    return (max_re - min_re) / width;
+}

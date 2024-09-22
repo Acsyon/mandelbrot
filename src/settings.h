@@ -109,4 +109,14 @@ Settings_write(const Settings *settings, const char *fname);
 void
 Settings_free(Settings *settings);
 
+/**
+ * Returns resolution according to parameters in `settings`
+ * 
+ * @param[in] settings Settings object to get resolution from
+ * 
+ * @return resolution according to parameters in `settings`
+ */
+double
+Settings_get_resolution(const Settings *settings);
+
 #endif /* SETTINGS_H_INCLUDED */

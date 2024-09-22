@@ -47,6 +47,6 @@ ImageData_action(enum Key key);
  * @return global array of pixel data
  */
 const float *
-get_pixel_data(void);
+ImageData_get_pixel_data(void);
 
 #endif /* DATA_H_INCLUDED */

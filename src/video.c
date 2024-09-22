@@ -92,7 +92,7 @@ _draw_image(void)
     const int width = GLOBAL_SETTINGS->width;
     const int height = GLOBAL_SETTINGS->height;
 
-    const float *const pxdata = get_pixel_data();
+    const float *const pxdata = ImageData_get_pixel_data();
     uint32_t *const buf = _video->image->pixels;
     for (int i = 0; i < width; ++i) {
         for (int j = 0; j < height; ++j) {

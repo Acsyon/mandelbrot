@@ -9,11 +9,15 @@
 
 #include "settings.h"
 
+#define NUMBER_CHUNKS_REAL 10
+#define NUMBER_CHUNKS_IMAG 10
+
 /**
  * Possible pixel states
-*/
+ */
 enum PixelState {
-    PX_VALID,
+    PX_VALID = 0,
+    PX_INTERPOLATED,
     PX_INVALID,
 };
 
@@ -25,7 +29,22 @@ typedef struct {
     mpf_t im;
     float itrs;
     enum PixelState state;
-} PixelData;
+} _pixelData;
+
+static void
+_pixelData_init(_pixelData *px)
+{
+    mpf_init(px->re);
+    mpf_init(px->im);
+    px->state = PX_INVALID;
+}
+
+static void
+_pixelData_clear(_pixelData *px)
+{
+    mpf_clear(px->re);
+    mpf_clear(px->im);
+}
 
 /**
  * Struct for buffer of thread-safe variables
@@ -37,46 +56,44 @@ typedef struct {
     mpf_t im_sqr;
     mpf_t abs_sqr;
     mpf_t max_sqr;
-} PixelDataBuffer;
+} _pixelDataBuffer;
 
-/**
- * Global ImageData object
- */
-static struct {
-    int width;
-    int height;
-    mpf_t resolution;
-    mpf_t centre_re;
-    mpf_t centre_im;
-    PixelData *data;
-    PixelDataBuffer *tbuf;
-    mpf_t action_buf;
-    float *framebuf;
-} *_imgdata = NULL;
-
-static inline double
-_default_resolution(void)
+static void
+_pixelDataBuffer_init(_pixelDataBuffer *buf)
 {
-    const int width = GLOBAL_SETTINGS->width;
-    const double max_re = GLOBAL_SETTINGS->max_re;
-    const double min_re = GLOBAL_SETTINGS->min_re;
-    return (max_re - min_re) / width;
+    mpf_init(buf->re);
+    mpf_init(buf->im);
+    mpf_init(buf->re_sqr);
+    mpf_init(buf->im_sqr);
+    mpf_init(buf->abs_sqr);
+    mpf_init(buf->max_sqr);
+}
+
+static void
+_pixelDataBuffer_clear(_pixelDataBuffer *buf)
+{
+    mpf_clear(buf->re);
+    mpf_clear(buf->im);
+    mpf_clear(buf->re_sqr);
+    mpf_clear(buf->im_sqr);
+    mpf_clear(buf->abs_sqr);
+    mpf_clear(buf->max_sqr);
 }
 
 /**
- * Perform actual Mandelbrot iterations on PixelData `px` for position in 
- * PixelDataBuffer `tbuf`
+ * Perform actual Mandelbrot iterations on _pixelData `px` for position in
+ * _pixelDataBuffer `tbuf`
  *
- * @param[in] px PixelData to work with
- * @param[in] buf PixelDataBuffer
+ * @param[in] px _pixelData to work with
+ * @param[in] buf _pixelDataBuffer
  */
 static void
-_pixeldata_iterate(PixelData *px, PixelDataBuffer *buf)
+_pixelData_iterate(_pixelData *px, _pixelDataBuffer *buf, uint16_t max_itrs)
 {
     mpf_set_ui(buf->re, 0UL);
     mpf_set_ui(buf->im, 0UL);
 
-    for (uint16_t i = 1; i <= GLOBAL_SETTINGS->max_itrs; ++i) {
+    for (uint16_t i = 1; i <= max_itrs; ++i) {
         mpf_mul(buf->re_sqr, buf->re, buf->re);
         mpf_mul(buf->im_sqr, buf->im, buf->im);
 
@@ -89,7 +106,7 @@ _pixeldata_iterate(PixelData *px, PixelDataBuffer *buf)
 
         mpf_add(buf->abs_sqr, buf->re_sqr, buf->im_sqr);
         if (mpf_cmp(buf->abs_sqr, buf->max_sqr) > 0) {
-            px->itrs = 1.0f * i / GLOBAL_SETTINGS->max_itrs;
+            px->itrs = 1.0f * i / max_itrs;
             return;
         }
     }
@@ -97,105 +114,212 @@ _pixeldata_iterate(PixelData *px, PixelDataBuffer *buf)
     px->itrs = 0.0; /* Converged I guess.. */
 }
 
-static void
-_imagedata_alloc(void)
+/**
+ * Global ImageData object
+ */
+typedef struct {
+    Settings settings;
+    mpf_t resolution;
+    mpf_t centre_re;
+    mpf_t centre_im;
+    _pixelData *data;
+    _pixelDataBuffer *tbuf;
+    mpf_t action_buf;
+    float *framebuf;
+} _imageData;
+
+static _imageData *
+_imageData_alloc(const Settings *settings)
 {
-    _imgdata = malloc(sizeof *_imgdata);
+    _imageData *const imgdata = malloc(sizeof *imgdata);
 
-    _imgdata->width = GLOBAL_SETTINGS->width;
-    _imgdata->height = GLOBAL_SETTINGS->height;
+    imgdata->settings = *settings;
+    mpf_set_default_prec(imgdata->settings.prec);
 
-    mpf_init(_imgdata->resolution);
-    mpf_init(_imgdata->centre_re);
-    mpf_init(_imgdata->centre_im);
-    mpf_set_d(_imgdata->resolution, _default_resolution());
-    mpf_set_d(_imgdata->centre_re, GLOBAL_SETTINGS->cntr_re);
-    mpf_set_d(_imgdata->centre_im, GLOBAL_SETTINGS->cntr_im);
+    mpf_init(imgdata->resolution);
+    mpf_init(imgdata->centre_re);
+    mpf_init(imgdata->centre_im);
+    mpf_set_d(imgdata->resolution, Settings_get_resolution(&imgdata->settings));
+    mpf_set_d(imgdata->centre_re, imgdata->settings.cntr_re);
+    mpf_set_d(imgdata->centre_im, imgdata->settings.cntr_im);
 
-    const int dims = GLOBAL_SETTINGS->width * GLOBAL_SETTINGS->height;
-    _imgdata->data = malloc(dims * sizeof *_imgdata->data);
+    const int dims = imgdata->settings.width * imgdata->settings.height;
+    imgdata->data = malloc(dims * sizeof *imgdata->data);
     for (int i = 0; i < dims; ++i) {
-        PixelData *const px = &_imgdata->data[i];
-        mpf_init(px->re);
-        mpf_init(px->im);
+        _pixelData_init(&imgdata->data[i]);
     }
-    _imgdata->framebuf = malloc(dims * sizeof *_imgdata->framebuf);
+    imgdata->framebuf = malloc(dims * sizeof *imgdata->framebuf);
 
     const int tnum = omp_get_max_threads();
-    _imgdata->tbuf = malloc(tnum * sizeof *_imgdata->tbuf);
+    imgdata->tbuf = malloc(tnum * sizeof *imgdata->tbuf);
 
     mpf_t max_sqr;
     mpf_init(max_sqr);
-    mpf_set_d(max_sqr, GLOBAL_SETTINGS->max_absval);
+    mpf_set_d(max_sqr, imgdata->settings.max_absval);
     mpf_mul(max_sqr, max_sqr, max_sqr);
     for (int i = 0; i < tnum; ++i) {
-        PixelDataBuffer *const buf = &_imgdata->tbuf[i];
-        mpf_init(buf->re);
-        mpf_init(buf->im);
-        mpf_init(buf->re_sqr);
-        mpf_init(buf->im_sqr);
-        mpf_init(buf->abs_sqr);
-        mpf_init(buf->max_sqr);
+        _pixelDataBuffer *const buf = &imgdata->tbuf[i];
+        _pixelDataBuffer_init(buf);
         mpf_set(buf->max_sqr, max_sqr);
     }
     mpf_clear(max_sqr);
 
-    mpf_init(_imgdata->action_buf);
+    mpf_init(imgdata->action_buf);
+
+    return imgdata;
+}
+
+static _pixelData *
+_imageData_get_pixel(_imageData *imgdata, int idx_re, int idx_im)
+{
+    const int height = imgdata->settings.height;
+    return &imgdata->data[idx_re * height + idx_im];
 }
 
 /**
  * Updates all (necessary) pixels in global ImageData object.
  */
 static void
-_imagedata_update(void)
+_imageData_update(_imageData *imgdata)
 {
-    PixelDataBuffer *const tbuf = _imgdata->tbuf;
-    const int width = _imgdata->width;
-    const int height = _imgdata->height;
-    mpf_t *const d = &_imgdata->resolution;
-    mpf_t *const c_re = &_imgdata->centre_re;
-    mpf_t *const c_im = &_imgdata->centre_im;
+    _pixelDataBuffer *const tbuf = imgdata->tbuf;
+    const Settings *const settings = &imgdata->settings;
 
-    const int i_c = width / 2;
-    const int j_c = height / 2;
+    const mpf_ptr res = imgdata->resolution;
+    const mpf_ptr cntr_re = imgdata->centre_re;
+    const mpf_ptr cntr_im = imgdata->centre_im;
 
-    const int prog = (width * height) / 100;
+    const int num_re = imgdata->settings.width;
+    const int num_im = imgdata->settings.height;
+    const int idx_cntr_re = num_re / 2;
+    const int idx_cntr_im = num_im / 2;
+
+    const int num_prog = (num_re * num_im) / 100;
     int ctr = 0;
 #pragma omp parallel for collapse(2)
-    for (int i = 0; i < width; ++i) {
-        for (int j = 0; j < height; ++j) {
-            PixelData *const px = &_imgdata->data[i * height + j];
-            /*
-            if (px->state == PX_VALID) {
-                continue;
-            }
-            */
+    for (int idx_re = 0; idx_re < num_re; ++idx_re) {
+        for (int idx_im = 0; idx_im < num_im; ++idx_im) {
+            _pixelData *const px
+              = _imageData_get_pixel(imgdata, idx_re, idx_im);
 
 #pragma omp atomic
             ++ctr;
-            if (ctr % prog == 0) {
-                const int prct = ctr / prog;
+            if (ctr % num_prog == 0) {
+                const int prct = ctr / num_prog;
                 printf("\33[2K\rRasterizing complex plane... (%3u %%)", prct);
                 fflush(stdout);
             }
 
-            mpf_set_d(px->re, (1.0 * (i - i_c)));
-            mpf_mul(px->re, px->re, *d);
-            mpf_add(px->re, px->re, *c_re);
+            if (px->state == PX_VALID) {
+                continue;
+            }
 
-            mpf_set_d(px->im, (1.0 * (j - j_c)));
-            mpf_mul(px->im, px->im, *d);
-            mpf_add(px->im, px->im, *c_im);
+            mpf_set_d(px->re, (1.0 * (idx_re - idx_cntr_re)));
+            mpf_mul(px->re, px->re, res);
+            mpf_add(px->re, px->re, cntr_re);
+
+            mpf_set_d(px->im, (1.0 * (idx_im - idx_cntr_im)));
+            mpf_mul(px->im, px->im, res);
+            mpf_add(px->im, px->im, cntr_im);
 
             const int tid = omp_get_thread_num();
-            PixelDataBuffer *const buf = &tbuf[tid];
-            _pixeldata_iterate(px, buf);
+            _pixelDataBuffer *const buf = &tbuf[tid];
+            _pixelData_iterate(px, buf, settings->max_itrs);
 
-            _imgdata->framebuf[i * height + j] = px->itrs;
+            imgdata->framebuf[idx_re * num_im + idx_im] = px->itrs;
         }
     }
     printf("\n");
 }
+
+static _imageData *
+_imageData_create(const Settings *settings)
+{
+    _imageData *const imgdata = _imageData_alloc(settings);
+    _imageData_update(imgdata);
+    return imgdata;
+}
+
+static void
+_imageData_free(_imageData *imgdata)
+{
+    if (imgdata == NULL) {
+        return;
+    }
+
+    const int dims = imgdata->settings.width * imgdata->settings.height;
+    for (int i = 0; i < dims; ++i) {
+        _pixelData_clear(&imgdata->data[i]);
+    }
+    free(imgdata->data);
+
+    const int tnum = omp_get_max_threads();
+    for (int i = 0; i < tnum; ++i) {
+        _pixelDataBuffer_clear(&imgdata->tbuf[i]);
+    }
+    free(imgdata->tbuf);
+
+    mpf_clear(imgdata->action_buf);
+
+    free(imgdata->framebuf);
+
+    free(imgdata);
+}
+
+void
+_imageData_action(_imageData *imgdata, enum Key key)
+{
+    const Settings *const settings = &imgdata->settings;
+    const mpf_ptr buf = imgdata->action_buf;
+    const mpf_ptr res = imgdata->resolution;
+    const mpf_ptr cntr_re = imgdata->centre_re;
+    const mpf_ptr cntr_im = imgdata->centre_im;
+    switch (key) {
+    case KEY_ZOOM_IN: {
+        mpf_set_d(buf, settings->zoom_spd);
+        mpf_mul(res, res, buf);
+    } break;
+    case KEY_ZOOM_OUT: {
+        mpf_set_d(buf, settings->zoom_spd);
+        mpf_div(res, res, buf);
+    } break;
+    case KEY_UP: {
+        const double offs = settings->height * settings->scrl_spd;
+        mpf_set_d(buf, offs);
+        mpf_mul(buf, buf, res);
+        mpf_sub(cntr_im, cntr_im, buf);
+    } break;
+    case KEY_DOWN: {
+        const double offs = settings->height * settings->scrl_spd;
+        mpf_set_d(buf, offs);
+        mpf_mul(buf, buf, res);
+        mpf_add(cntr_im, cntr_im, buf);
+    } break;
+    case KEY_LEFT: {
+        const double offs = settings->width * settings->scrl_spd;
+        mpf_set_d(buf, offs);
+        mpf_mul(buf, buf, res);
+        mpf_sub(cntr_re, cntr_re, buf);
+    } break;
+    case KEY_RIGHT: {
+        const double offs = settings->width * settings->scrl_spd;
+        mpf_set_d(buf, offs);
+        mpf_mul(buf, buf, res);
+        mpf_add(cntr_re, cntr_re, buf);
+    } break;
+    case KEY_RESET: {
+        mpf_set_d(res, Settings_get_resolution(settings));
+        mpf_set_d(cntr_re, settings->cntr_re);
+        mpf_set_d(cntr_im, settings->cntr_im);
+    } break;
+    case KEY_INVALID:
+    default:
+        return;
+    }
+    _imageData_update(imgdata);
+}
+
+static _imageData *_imgdata = NULL;
 
 void
 ImageData_init(void)
@@ -203,101 +327,24 @@ ImageData_init(void)
     if (_imgdata != NULL) {
         return;
     }
-
-    mpf_set_default_prec(GLOBAL_SETTINGS->prec);
-    _imagedata_alloc();
-    _imagedata_update();
+    _imgdata = _imageData_create(GLOBAL_SETTINGS);
 }
 
 void
 ImageData_free(void)
 {
-    if (_imgdata == NULL) {
-        return;
-    }
-
-    const int dims = GLOBAL_SETTINGS->width * GLOBAL_SETTINGS->height;
-    for (int i = 0; i < dims; ++i) {
-        PixelData *const px = &_imgdata->data[i];
-        mpf_clear(px->re);
-        mpf_clear(px->im);
-    }
-    free(_imgdata->data);
-
-    const int tnum = omp_get_max_threads();
-    for (int i = 0; i < tnum; ++i) {
-        PixelDataBuffer *const buf = &_imgdata->tbuf[i];
-        mpf_clear(buf->re);
-        mpf_clear(buf->im);
-        mpf_clear(buf->re_sqr);
-        mpf_clear(buf->im_sqr);
-        mpf_clear(buf->abs_sqr);
-        mpf_clear(buf->max_sqr);
-    }
-    free(_imgdata->tbuf);
-
-    mpf_clear(_imgdata->action_buf);
-
-    free(_imgdata->framebuf);
-
-    free(_imgdata);
+    _imageData_free(_imgdata);
     _imgdata = NULL;
 }
 
 void
 ImageData_action(enum Key key)
 {
-    mpf_t *const buf = &_imgdata->action_buf;
-    mpf_t *const res = &_imgdata->resolution;
-    mpf_t *const c_re = &_imgdata->centre_re;
-    mpf_t *const c_im = &_imgdata->centre_im;
-    switch (key) {
-    case KEY_ZOOM_IN: {
-        mpf_set_d(*buf, GLOBAL_SETTINGS->zoom_spd);
-        mpf_mul(*res, *res, *buf);
-    } break;
-    case KEY_ZOOM_OUT: {
-        mpf_set_d(*buf, GLOBAL_SETTINGS->zoom_spd);
-        mpf_div(*res, *res, *buf);
-    } break;
-    case KEY_UP: {
-        const double offs = _imgdata->height * GLOBAL_SETTINGS->scrl_spd;
-        mpf_set_d(*buf, offs);
-        mpf_mul(*buf, *buf, *res);
-        mpf_sub(*c_im, *c_im, *buf);
-    } break;
-    case KEY_DOWN: {
-        const double offs = _imgdata->height * GLOBAL_SETTINGS->scrl_spd;
-        mpf_set_d(*buf, offs);
-        mpf_mul(*buf, *buf, *res);
-        mpf_add(*c_im, *c_im, *buf);
-    } break;
-    case KEY_LEFT: {
-        const double offs = _imgdata->width * GLOBAL_SETTINGS->scrl_spd;
-        mpf_set_d(*buf, offs);
-        mpf_mul(*buf, *buf, *res);
-        mpf_sub(*c_re, *c_re, *buf);
-    } break;
-    case KEY_RIGHT: {
-        const double offs = _imgdata->width * GLOBAL_SETTINGS->scrl_spd;
-        mpf_set_d(*buf, offs);
-        mpf_mul(*buf, *buf, *res);
-        mpf_add(*c_re, *c_re, *buf);
-    } break;
-    case KEY_RESET: {
-        mpf_set_d(*res, _default_resolution());
-        mpf_set_d(*c_re, GLOBAL_SETTINGS->cntr_re);
-        mpf_set_d(*c_im, GLOBAL_SETTINGS->cntr_im);
-    } break;
-    case KEY_INVALID:
-    default:
-        return;
-    }
-    _imagedata_update();
+    _imageData_action(_imgdata, key);
 }
 
 const float *
-get_pixel_data(void)
+ImageData_get_pixel_data(void)
 {
     return _imgdata->framebuf;
 }
