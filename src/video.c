@@ -4,6 +4,7 @@
 
 #include <SDL2/SDL.h>
 
+#include "color.h"
 #include "data.h"
 #include "settings.h"
 
@@ -17,6 +18,7 @@ static struct {
     SDL_Surface *surface;
     SDL_Surface *image;
     bool do_redraw;
+    Palette_fnc *palette;
 } *_video = NULL;
 
 void
@@ -32,6 +34,7 @@ Video_init(void)
     _video->surface = NULL;
     _video->image = NULL;
     _video->do_redraw = true;
+    _video->palette = &Palette_exp_hsv;
 
     ImageData_init();
 
@@ -78,12 +81,6 @@ Video_quit(void)
     _video = NULL;
 }
 
-static inline uint32_t
-_palette(float pos)
-{
-    return powf(pos, 1.0 / 1.5) * 255 * 0x00000001;
-}
-
 static void
 _draw_image(void)
 {
@@ -96,7 +93,7 @@ _draw_image(void)
     uint32_t *const buf = _video->image->pixels;
     for (int i = 0; i < width; ++i) {
         for (int j = 0; j < height; ++j) {
-            buf[j * width + i] = _palette(pxdata[i * height + j]);
+            buf[j * width + i] = _video->palette(pxdata[i * height + j]);
         }
     }
 

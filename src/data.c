@@ -1,5 +1,6 @@
 #include "data.h"
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,6 +9,8 @@
 #include <omp.h>
 
 #include "settings.h"
+
+#define PERIODICITY_CHECK_CYCLE_LENGTH 25
 
 /**
  * Possible data (pixel and chunk) states. Not all apply to all.
@@ -145,7 +148,7 @@ _pixelData_iterate(_pixelData *px, _pixelDataBuffer *buf, uint16_t max_itrs)
         }
 
         ++period;
-        if (period > 25) {
+        if (period > PERIODICITY_CHECK_CYCLE_LENGTH) {
             period = 0;
             mpf_set(buf->re_old, buf->re);
             mpf_set(buf->im_old, buf->im);

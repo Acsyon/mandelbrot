@@ -66,6 +66,7 @@ endif ()
 # Set source files
 set(SOURCE_FILES
     src/main.c
+    src/color.c
     src/data.c
     src/log.c
     src/settings.c
