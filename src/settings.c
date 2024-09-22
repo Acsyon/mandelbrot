@@ -18,7 +18,8 @@
 #define DEFAULT_CENTRE_IMAG 0.0
 
 #define DEFAULT_ZOOM_SPEED 0.5
-#define DEFAULT_SCROLL_SPEED 0.1
+#define DEFAULT_NUMBER_CHUNKS_REAL 10
+#define DEFAULT_NUMBER_CHUNKS_IMAG 10
 
 #define DEFAULT_PRECISION 128UL
 
@@ -31,8 +32,9 @@ static Settings _global_settings = {
   .min_re = DEFAULT_MINIMUM_REAL,
   .cntr_re = DEFAULT_CENTRE_REAL,
   .cntr_im = DEFAULT_CENTRE_IMAG,
-  .zoom_spd = DEFAULT_ZOOM_SPEED,
-  .scrl_spd = DEFAULT_SCROLL_SPEED,
+  .zoom_fac = DEFAULT_ZOOM_SPEED,
+  .num_chnks_re = DEFAULT_NUMBER_CHUNKS_REAL,
+  .num_chnks_im = DEFAULT_NUMBER_CHUNKS_IMAG,
   .prec = DEFAULT_PRECISION,
 };
 
@@ -93,8 +95,9 @@ _settings_from_cJSON(Settings *settings, cJSON *json)
     JSON_TO_MEMBER(min_re);
     JSON_TO_MEMBER(cntr_re);
     JSON_TO_MEMBER(cntr_im);
-    JSON_TO_MEMBER(zoom_spd);
-    JSON_TO_MEMBER(scrl_spd);
+    JSON_TO_MEMBER(zoom_fac);
+    JSON_TO_MEMBER(num_chnks_re);
+    JSON_TO_MEMBER(num_chnks_im);
     JSON_TO_MEMBER(prec);
 
 #undef JSON_TO_MEMBER
@@ -165,8 +168,9 @@ _cJSON_from_settings(const Settings *settings)
     MEMBER_TO_JSON(min_re);
     MEMBER_TO_JSON(cntr_re);
     MEMBER_TO_JSON(cntr_im);
-    MEMBER_TO_JSON(zoom_spd);
-    MEMBER_TO_JSON(scrl_spd);
+    MEMBER_TO_JSON(zoom_fac);
+    MEMBER_TO_JSON(num_chnks_re);
+    MEMBER_TO_JSON(num_chnks_im);
     MEMBER_TO_JSON(prec);
 
 #undef MEMBER_TO_JSON
@@ -224,7 +228,7 @@ Settings_free(Settings *settings)
 }
 
 double
-Settings_get_resolution(const Settings *settings)
+Settings_get_units_per_pixel(const Settings *settings)
 {
     const int width = settings->width;
     const double max_re = settings->max_re;

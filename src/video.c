@@ -126,6 +126,7 @@ _keymap(SDL_Keycode sdl_key)
     case SDLK_d:
     case SDLK_RIGHT:
         return KEY_RIGHT;
+    case SDLK_r:
     case SDLK_KP_0:
     case SDLK_0:
         return KEY_RESET;

@@ -14,17 +14,18 @@
  * Struct for settings
  */
 typedef struct {
-    int width;
-    int height;
-    double max_absval;
-    uint16_t max_itrs;
-    double max_re;
-    double min_re;
-    double cntr_re;
-    double cntr_im;
-    double zoom_spd;
-    double scrl_spd;
-    unsigned long int prec;
+    int width;         /* Width of window in pixels */
+    int height;        /* Height of window in pixels */
+    double max_absval; /* Maximum absolute value to cut Mandelbrot iteration */
+    uint16_t max_itrs; /* Maximum number of Mandelbrot iterations to make*/
+    double max_re;     /* Maximum value of real part */
+    double min_re;     /* Maximum value of imaginary part */
+    double cntr_re;    /* Real part of centre point of window */
+    double cntr_im;    /* Imaginary part of centre point of window */
+    double zoom_fac;   /* Factor for one zoom stage */
+    int num_chnks_re;  /* Number of chunks in real direction */
+    int num_chnks_im;  /* Number of chunks in imaginary direction */
+    unsigned long int prec; /* Precision for GMP */
 } Settings;
 
 /**
@@ -110,13 +111,14 @@ void
 Settings_free(Settings *settings);
 
 /**
- * Returns resolution according to parameters in `settings`
- * 
- * @param[in] settings Settings object to get resolution from
- * 
- * @return resolution according to parameters in `settings`
+ * Returns number of mathematical length units per pixel according to parameters
+ * in `settings`
+ *
+ * @param[in] settings Settings object to get units per pixel from
+ *
+ * @return units per pixel according to parameters in `settings`
  */
 double
-Settings_get_resolution(const Settings *settings);
+Settings_get_units_per_pixel(const Settings *settings);
 
 #endif /* SETTINGS_H_INCLUDED */
