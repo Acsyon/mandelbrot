@@ -22,7 +22,7 @@ ImageData_free(void);
 /**
  * Enumerator for key inputs
  */
-typedef enum {
+enum Key {
     KEY_INVALID = -1,
     KEY_ZOOM_IN,
     KEY_ZOOM_OUT,
@@ -31,7 +31,7 @@ typedef enum {
     KEY_LEFT,
     KEY_RIGHT,
     KEY_RESET,
-} Key;
+};
 
 /**
  * Perform global ImageData object according to keypress in `key`.
@@ -39,7 +39,7 @@ typedef enum {
  * @param[in] key pressed key
  */
 void
-ImageData_action(Key key);
+ImageData_action(enum Key key);
 
 /**
  * Returns global array of pixel data.

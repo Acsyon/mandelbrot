@@ -13,8 +13,8 @@
  * Struct for settings
  */
 typedef struct {
-    unsigned int width;
-    unsigned int height;
+    int width;
+    int height;
     double max_absval;
     uint16_t max_itrs;
     double max_re;

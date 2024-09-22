@@ -10,13 +10,21 @@
 #include "settings.h"
 
 /**
+ * Possible pixel states
+*/
+enum PixelState {
+    PX_VALID,
+    PX_INVALID,
+};
+
+/**
  * Struct containing data for each pixel
  */
 typedef struct {
     mpf_t re;
     mpf_t im;
     float itrs;
-    bool redraw;
+    enum PixelState state;
 } PixelData;
 
 /**
@@ -35,8 +43,8 @@ typedef struct {
  * Global ImageData object
  */
 static struct {
-    unsigned int width;
-    unsigned int height;
+    int width;
+    int height;
     mpf_t resolution;
     mpf_t centre_re;
     mpf_t centre_im;
@@ -49,20 +57,17 @@ static struct {
 static inline double
 _default_resolution(void)
 {
-    const unsigned int width = GLOBAL_SETTINGS->width;
+    const int width = GLOBAL_SETTINGS->width;
     const double max_re = GLOBAL_SETTINGS->max_re;
     const double min_re = GLOBAL_SETTINGS->min_re;
     return (max_re - min_re) / width;
 }
 
 /**
- * Perform actual Mandelbrot iterations on PixelData `px` for position with real
- * part `re0` and imaginary part `im0` (using PixelDataBuffer `tbuf` for
- * optimizations)
+ * Perform actual Mandelbrot iterations on PixelData `px` for position in 
+ * PixelDataBuffer `tbuf`
  *
  * @param[in] px PixelData to work with
- * @param[in] re0 real part of position
- * @param[in] im0 imaginary part of position
  * @param[in] buf PixelDataBuffer
  */
 static void
@@ -107,9 +112,9 @@ _imagedata_alloc(void)
     mpf_set_d(_imgdata->centre_re, GLOBAL_SETTINGS->cntr_re);
     mpf_set_d(_imgdata->centre_im, GLOBAL_SETTINGS->cntr_im);
 
-    const unsigned int dims = GLOBAL_SETTINGS->width * GLOBAL_SETTINGS->height;
+    const int dims = GLOBAL_SETTINGS->width * GLOBAL_SETTINGS->height;
     _imgdata->data = malloc(dims * sizeof *_imgdata->data);
-    for (unsigned int i = 0; i < dims; ++i) {
+    for (int i = 0; i < dims; ++i) {
         PixelData *const px = &_imgdata->data[i];
         mpf_init(px->re);
         mpf_init(px->im);
@@ -145,24 +150,40 @@ static void
 _imagedata_update(void)
 {
     PixelDataBuffer *const tbuf = _imgdata->tbuf;
-    const unsigned int width = _imgdata->width;
-    const unsigned int height = _imgdata->height;
+    const int width = _imgdata->width;
+    const int height = _imgdata->height;
     mpf_t *const d = &_imgdata->resolution;
     mpf_t *const c_re = &_imgdata->centre_re;
     mpf_t *const c_im = &_imgdata->centre_im;
 
-    const unsigned int prog = (width * height) / 100;
-    unsigned int ctr = 0;
-#pragma omp parallel for collapse(2)
-    for (unsigned int i = 0; i < width; ++i) {
-        for (unsigned int j = 0; j < height; ++j) {
-            PixelData *const px = &_imgdata->data[i * height + j];
+    const int i_c = width / 2;
+    const int j_c = height / 2;
 
-            mpf_set_d(px->re, (-0.5 * width + 1.0 * i));
+    const int prog = (width * height) / 100;
+    int ctr = 0;
+#pragma omp parallel for collapse(2)
+    for (int i = 0; i < width; ++i) {
+        for (int j = 0; j < height; ++j) {
+            PixelData *const px = &_imgdata->data[i * height + j];
+            /*
+            if (px->state == PX_VALID) {
+                continue;
+            }
+            */
+
+#pragma omp atomic
+            ++ctr;
+            if (ctr % prog == 0) {
+                const int prct = ctr / prog;
+                printf("\33[2K\rRasterizing complex plane... (%3u %%)", prct);
+                fflush(stdout);
+            }
+
+            mpf_set_d(px->re, (1.0 * (i - i_c)));
             mpf_mul(px->re, px->re, *d);
             mpf_add(px->re, px->re, *c_re);
 
-            mpf_set_d(px->im, (-0.5 * height + 1.0 * j));
+            mpf_set_d(px->im, (1.0 * (j - j_c)));
             mpf_mul(px->im, px->im, *d);
             mpf_add(px->im, px->im, *c_im);
 
@@ -171,13 +192,6 @@ _imagedata_update(void)
             _pixeldata_iterate(px, buf);
 
             _imgdata->framebuf[i * height + j] = px->itrs;
-#pragma omp atomic
-            ++ctr;
-            if (ctr % prog == 0) {
-                const unsigned int prct = ctr / prog;
-                printf("\33[2K\rRasterizing complex plane... (%3u %%)", prct);
-                fflush(stdout);
-            }
         }
     }
     printf("\n");
@@ -202,8 +216,8 @@ ImageData_free(void)
         return;
     }
 
-    const unsigned int dims = GLOBAL_SETTINGS->width * GLOBAL_SETTINGS->height;
-    for (unsigned int i = 0; i < dims; ++i) {
+    const int dims = GLOBAL_SETTINGS->width * GLOBAL_SETTINGS->height;
+    for (int i = 0; i < dims; ++i) {
         PixelData *const px = &_imgdata->data[i];
         mpf_clear(px->re);
         mpf_clear(px->im);
@@ -231,7 +245,7 @@ ImageData_free(void)
 }
 
 void
-ImageData_action(Key key)
+ImageData_action(enum Key key)
 {
     mpf_t *const buf = &_imgdata->action_buf;
     mpf_t *const res = &_imgdata->resolution;
@@ -270,11 +284,11 @@ ImageData_action(Key key)
         mpf_mul(*buf, *buf, *res);
         mpf_add(*c_re, *c_re, *buf);
     } break;
-    case KEY_RESET:
+    case KEY_RESET: {
         mpf_set_d(*res, _default_resolution());
         mpf_set_d(*c_re, GLOBAL_SETTINGS->cntr_re);
         mpf_set_d(*c_im, GLOBAL_SETTINGS->cntr_im);
-        break;
+    } break;
     case KEY_INVALID:
     default:
         return;

@@ -41,8 +41,8 @@ Video_init(void)
         return;
     }
 
-    const unsigned int width = GLOBAL_SETTINGS->width;
-    const unsigned int height = GLOBAL_SETTINGS->height;
+    const int width = GLOBAL_SETTINGS->width;
+    const int height = GLOBAL_SETTINGS->height;
 
     _video->window = SDL_CreateWindow(
       "mandelbrot", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width,
@@ -89,13 +89,13 @@ _draw_image(void)
 {
     SDL_LockSurface(_video->image);
 
-    const unsigned int width = GLOBAL_SETTINGS->width;
-    const unsigned int height = GLOBAL_SETTINGS->height;
+    const int width = GLOBAL_SETTINGS->width;
+    const int height = GLOBAL_SETTINGS->height;
 
     const float *const pxdata = get_pixel_data();
     uint32_t *const buf = _video->image->pixels;
-    for (unsigned int i = 0; i < width; ++i) {
-        for (unsigned int j = 0; j < height; ++j) {
+    for (int i = 0; i < width; ++i) {
+        for (int j = 0; j < height; ++j) {
             buf[j * width + i] = _palette(pxdata[i * height + j]);
         }
     }
@@ -104,7 +104,7 @@ _draw_image(void)
     SDL_BlitSurface(_video->image, NULL, _video->surface, NULL);
 }
 
-static inline Key
+static inline enum Key
 _keymap(SDL_Keycode sdl_key)
 {
     switch (sdl_key) {
@@ -153,7 +153,7 @@ Video_loop(void)
                 case SDLK_q:
                     return;
                 default: {
-                    const Key key = _keymap(e.key.keysym.sym);
+                    const enum Key key = _keymap(e.key.keysym.sym);
                     ImageData_action(key);
                     _video->do_redraw = true;
                 } break;
