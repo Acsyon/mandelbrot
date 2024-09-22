@@ -1,0 +1,32 @@
+#include "settings.h"
+
+#define DEFAULT_WIDTH 800U
+#define DEFAULT_HEIGHT 600U
+#define DEFAULT_MAXIMUM_ABSOLUTE_VALUE 2.0L
+#define DEFAULT_MAXIMUM_ITERATIONS UINT16_C(1000)
+
+#define DEFAULT_MAXIMUM_REAL 1.0L
+#define DEFAULT_MINIMUM_REAL -2.0L
+#define DEFAULT_CENTRE_REAL -0.5L
+#define DEFAULT_CENTRE_IMAG 0.0L
+
+#define DEFAULT_ZOOM_SPEED 0.5L
+#define DEFAULT_SCROLL_SPEED 0.1L
+
+#define DEFAULT_PRECISION 128UL
+
+static Settings _global_settings = {
+  .width = DEFAULT_WIDTH,
+  .height = DEFAULT_HEIGHT,
+  .max_absval = DEFAULT_MAXIMUM_ABSOLUTE_VALUE,
+  .max_itrs = DEFAULT_MAXIMUM_ITERATIONS,
+  .max_re = DEFAULT_MAXIMUM_REAL,
+  .min_re = DEFAULT_MINIMUM_REAL,
+  .cntr_re = DEFAULT_CENTRE_REAL,
+  .cntr_im = DEFAULT_CENTRE_IMAG,
+  .zoom_spd = DEFAULT_ZOOM_SPEED,
+  .scrl_spd = DEFAULT_SCROLL_SPEED,
+  .prec = DEFAULT_PRECISION,
+};
+
+const Settings *const GLOBAL_SETTINGS = &_global_settings;
