@@ -9,6 +9,8 @@
 
 #include <stdint.h>
 
+#define INVALID_POS -1.0
+
 /**
  * Typedef for palette functions.
  *

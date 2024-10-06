@@ -124,16 +124,16 @@ _keymap(SDL_Keycode sdl_key)
 static void
 _videoData_loop(_videoData *video)
 {
-    _videoData_write_framebuffer(video);
+    static const unsigned int MSECONDS_PER_FRAME = 1000 / FPS;
     SDL_Event event;
     for (;;) {
+        if (ImageData_perform_action(MSECONDS_PER_FRAME)) {
+            _videoData_write_framebuffer(video);
+        }
         _videoData_draw_image(video);
         SDL_UpdateWindowSurface(video->window);
-        const int has_events = SDL_PollEvent(&event);
-        if (has_events == 0) {
-            msleep(1000 / FPS);
-            continue;
-        }
+        
+        SDL_PollEvent(&event);
         SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
         if (event.type == SDL_QUIT) {
             return;
@@ -145,10 +145,7 @@ _videoData_loop(_videoData *video)
                 return;
             default: {
                 const enum Key key = _keymap(keycode);
-                const int rewrite_framebuffer = ImageData_action(key);
-                if (rewrite_framebuffer != 0) {
-                    _videoData_write_framebuffer(video);
-                }
+                ImageData_register_action(key);
             } break;
             }
         }

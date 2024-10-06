@@ -187,6 +187,9 @@ Palette_blue(float pos)
 uint32_t
 Palette_exp_hsv(float pos)
 {
+    if (pos == INVALID_POS) {
+        return 0x000D152D;
+    }
     (void) &_rgb2hsv;
     const _ahsv hsv = {
       .h = (((uint16_t) powf(pos * 360, 1.5f)) % 360),

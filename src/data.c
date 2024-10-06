@@ -5,22 +5,57 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <SDL2/SDL_timer.h>
 #include <gmp.h>
 #include <omp.h>
 
+#include "color.h"
 #include "settings.h"
+#include "sys.h"
 
 #define INITIAL_PRECISION GMP_LIMB_BITS
-#define PERIODICITY_CHECK_CYCLE_LENGTH 25
 #define ITERATION_CUTOFF_ABSOLUTE_VALUE 2.0
 
+#define PERIODICITY_CHECK_CYCLE_LENGTH 25
+#define MPF_SIMILARITY_THRESHOLD 1.0e-6
+
+static inline int
+_mpf_is_similar(mpf_srcptr lhs, mpf_srcptr rhs, mpf_ptr tmp, double reldiff)
+{
+    mpf_reldiff(tmp, lhs, rhs);
+    mpf_abs(tmp, tmp);
+    return (mpf_cmp_d(tmp, reldiff) < 0);
+}
+
+#define MPF_IS_SIMILAR(lhs, rhs, tmp)                                          \
+    _mpf_is_similar((lhs), (rhs), (tmp), MPF_SIMILARITY_THRESHOLD)
+
+/* -------------------------------------------------------------------------- */
+
 /**
- * Possible data (pixel and chunk) states. Not all apply to all.
+ * Possible pixel states
+ */
+enum PixelState {
+    PIXEL_STATE_INVALID = -1,
+    PIXEL_STATE_VALID = 0,
+    PIXEL_STATE_INTERPOLATED,
+};
+
+/**
+ * Possible chunk states
+ */
+enum ChunkState {
+    CHUNK_STATE_INVALID = -1,
+    CHUNK_STATE_VALID = 0,
+    CHUNK_STATE_INTERPOLATED,
+};
+
+/**
+ * Possible data states
  */
 enum DataState {
-    STATE_INVALID = -1,
-    STATE_VALID = 0,
-    STATE_INTERPOLATED,
+    DATA_STATE_WORKING = -1,
+    DATA_STATE_IDLE = 0,
 };
 
 /* -------------------------------------------------------------------------- */
@@ -32,7 +67,7 @@ typedef struct {
     mpf_t re;
     mpf_t im;
     float itrs;
-    enum DataState state;
+    enum PixelState state;
 } _pixelData;
 
 static void
@@ -40,7 +75,8 @@ _pixelData_init(_pixelData *px)
 {
     mpf_init(px->re);
     mpf_init(px->im);
-    px->state = STATE_INVALID;
+    px->state = PIXEL_STATE_INVALID;
+    px->itrs = INVALID_POS;
 }
 
 static void
@@ -118,17 +154,6 @@ _pixelDataBuffer_set_prec(_pixelDataBuffer *buf, mp_bitcnt_t prec)
 
 /* -------------------------------------------------------------------------- */
 
-static inline int
-_mpf_is_similar(mpf_srcptr lhs, mpf_srcptr rhs, mpf_ptr tmp, double reldiff)
-{
-    mpf_reldiff(tmp, lhs, rhs);
-    mpf_abs(tmp, tmp);
-    return (mpf_cmp_d(tmp, reldiff) < 0);
-}
-
-#define MPF_IS_SIMILAR(lhs, rhs, tmp)                                          \
-    _mpf_is_similar((lhs), (rhs), (tmp), 1.0e-6)
-
 /**
  * Performs actual Mandelbrot iterations on _pixelData `px` for position in
  * _pixelDataBuffer `tbuf`.
@@ -203,11 +228,13 @@ typedef struct {
     int idx_re;
     int idx_im;
     _pixelData *data;
-    enum DataState state;
+    enum ChunkState state;
 } _pixelChunk;
 
 static void
-_pixelChunk_shift(int num_chnks, int shift, int *p_idx, enum DataState *p_state)
+_pixelChunk_shift(
+  int num_chnks, int shift, int *p_idx, enum ChunkState *p_state
+)
 {
     if (shift == 0) {
         return;
@@ -218,7 +245,7 @@ _pixelChunk_shift(int num_chnks, int shift, int *p_idx, enum DataState *p_state)
 
     /* In case of overflow, chunk has to be recreated */
     if (new_idx != new_idx_raw) {
-        *p_state = STATE_INVALID;
+        *p_state = CHUNK_STATE_INVALID;
     }
 }
 
@@ -253,7 +280,7 @@ _chunkData_init(_chunkData *chunks, const Settings *settings, _pixelData *px)
             _pixelChunk *const chunk = &chunks->data[idx_chnk];
             chunk->idx_re = idx_chnk_re;
             chunk->idx_im = idx_chnk_im;
-            chunk->state = STATE_INVALID;
+            chunk->state = CHUNK_STATE_INVALID;
 
             const int idx_px_re = idx_chnk_re * num_px_re;
             const int idx_px_im = idx_chnk_im * num_px_im;
@@ -286,6 +313,8 @@ typedef struct {
     _pixelDataBuffer *tbuf;
     _chunkData chunks;
     float *framebuf;
+    enum DataState state;
+    uint64_t target_ticks;
 } _imageData;
 
 static void
@@ -358,6 +387,8 @@ _imageData_alloc(const Settings *settings)
     _imageData_init_data(imgdata);
     _imageData_init_tbuf(imgdata);
     _imageData_init_chunks(imgdata);
+
+    imgdata->state = DATA_STATE_WORKING;
 
     return imgdata;
 }
@@ -464,7 +495,7 @@ _pixelChunk_update_pixel(
     const int idx_px = idx_px_re * stride + idx_px_im;
     _pixelData *const px = &chunk->data[idx_px];
 
-    if (px->state == STATE_VALID) {
+    if (px->state == PIXEL_STATE_VALID) {
         return;
     }
 
@@ -495,13 +526,13 @@ _pixelChunk_update_pixel(
     _pixelDataBuffer *const buf = &tbuf[tid];
     _pixelData_iterate(px, buf, settings->max_itrs);
 
-    px->state = STATE_VALID;
+    px->state = PIXEL_STATE_VALID;
 }
 
 static void
 _pixelChunk_update(_pixelChunk *chunk, const _imageData *imgdata)
 {
-    if (chunk->state == STATE_VALID) {
+    if (chunk->state == CHUNK_STATE_VALID) {
         return;
     }
 
@@ -513,10 +544,13 @@ _pixelChunk_update(_pixelChunk *chunk, const _imageData *imgdata)
     for (int idx_px_re = 0; idx_px_re < num_px_re; ++idx_px_re) {
         for (int idx_px_im = 0; idx_px_im < num_px_im; ++idx_px_im) {
             _pixelChunk_update_pixel(chunk, imgdata, idx_px_re, idx_px_im);
+            if (SDL_GetTicks64() > imgdata->target_ticks) {
+                return;
+            }
         }
     }
 
-    chunk->state = STATE_VALID;
+    chunk->state = CHUNK_STATE_VALID;
 }
 
 static void
@@ -532,11 +566,12 @@ _pixelChunk_invalidate_all(_pixelChunk *chunk, const _imageData *imgdata)
             const int stride = params->stride;
             const int idx_px = idx_px_re * stride + idx_px_im;
             _pixelData *const px = &chunk->data[idx_px];
-            px->state = STATE_INVALID;
+            px->state = PIXEL_STATE_INVALID;
+            px->itrs = INVALID_POS;
         }
     }
 
-    chunk->state = STATE_INVALID;
+    chunk->state = CHUNK_STATE_INVALID;
 }
 
 typedef void
@@ -551,17 +586,10 @@ _imageData_apply_to_all_chunks(
 {
     _chunkData *const chunks = &imgdata->chunks;
     const int num_tot = chunks->num_re * chunks->num_im;
-    int ctr = 0;
 #pragma omp parallel for
     for (int idx = 0; idx < num_tot; ++idx) {
         _pixelChunk *const chunk = &chunks->data[idx];
         callback(chunk, imgdata, vparams);
-#pragma omp critical
-        {
-            ++ctr;
-            printf("\33[2K\rWorking... (% 3.2f %%)", 100.0 * ctr / num_tot);
-            fflush(stdout);
-        }
     }
 }
 
@@ -600,7 +628,7 @@ _pixelChunk_callback_shift(
     _pixelChunk_shift_re(chunk, chunks, shift_re);
     _pixelChunk_shift_im(chunk, chunks, shift_im);
 
-    if (chunk->state == STATE_INVALID) {
+    if (chunk->state == CHUNK_STATE_INVALID) {
         _pixelChunk_invalidate_all(chunk, imgdata);
     }
 }
@@ -647,7 +675,7 @@ _calculate_new_prec(mpf_srcptr upp)
 }
 
 static void
-_imageData_zoom(_imageData *imgdata, int stages)
+_imageData_register_zoom(_imageData *imgdata, int stages)
 {
     const Settings *const settings = &imgdata->settings;
     const mpf_ptr buf = imgdata->action_buf;
@@ -668,7 +696,7 @@ _imageData_zoom(_imageData *imgdata, int stages)
 }
 
 static void
-_imageData_shift(_imageData *imgdata, int shift_re, int shift_im)
+_imageData_register_shift(_imageData *imgdata, int shift_re, int shift_im)
 {
     const Settings *const settings = &imgdata->settings;
     const mpf_ptr buf = imgdata->action_buf;
@@ -707,7 +735,7 @@ _pixelChunk_callback_reset(
 }
 
 static void
-_imageData_reset_view(_imageData *imgdata)
+_imageData_register_reset(_imageData *imgdata)
 {
     _imageData_init_view(imgdata);
     _pixelChunk_callback *const callback = &_pixelChunk_callback_reset;
@@ -753,8 +781,20 @@ _imageData_update_pixels(_imageData *imgdata)
     _pixelChunk_callback *const callback = &_pixelChunk_callback_update;
     _imageData_apply_to_all_chunks(imgdata, callback, NULL);
     _imageData_update_framebuffer(imgdata);
-    printf("\33[2K\rReady...");
-    fflush(stdout);
+}
+
+static bool
+_imageData_is_complete(_imageData *imgdata)
+{
+    _chunkData *const chunks = &imgdata->chunks;
+    const int num_tot = chunks->num_re * chunks->num_im;
+    for (int idx = 0; idx < num_tot; ++idx) {
+        _pixelChunk *const chunk = &chunks->data[idx];
+        if (chunk->state == CHUNK_STATE_INVALID) {
+            return false;
+        }
+    }
+    return true;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -777,36 +817,58 @@ _imageData_free(_imageData *imgdata)
     free(imgdata);
 }
 
-static inline int
-_imageData_action(_imageData *imgdata, enum Key key)
+static void
+_imageData_register_action(_imageData *imgdata, enum Key key)
 {
+    static const int ZOOM_STAGES = 1;
+    static const int SHIFT_STAGES = 2;
+    if (imgdata->state == DATA_STATE_WORKING) {
+        return;
+    }
     switch (key) {
     case KEY_ZOOM_IN: {
-        _imageData_zoom(imgdata, +1);
+        _imageData_register_zoom(imgdata, +ZOOM_STAGES);
     } break;
     case KEY_ZOOM_OUT: {
-        _imageData_zoom(imgdata, -1);
+        _imageData_register_zoom(imgdata, -ZOOM_STAGES);
     } break;
     case KEY_UP: {
-        _imageData_shift(imgdata, 0, -1);
+        _imageData_register_shift(imgdata, 0, -SHIFT_STAGES);
     } break;
     case KEY_DOWN: {
-        _imageData_shift(imgdata, 0, +1);
+        _imageData_register_shift(imgdata, 0, +SHIFT_STAGES);
     } break;
     case KEY_LEFT: {
-        _imageData_shift(imgdata, -1, 0);
+        _imageData_register_shift(imgdata, -SHIFT_STAGES, 0);
     } break;
     case KEY_RIGHT: {
-        _imageData_shift(imgdata, +1, 0);
+        _imageData_register_shift(imgdata, +SHIFT_STAGES, 0);
     } break;
     case KEY_RESET: {
-        _imageData_reset_view(imgdata);
+        _imageData_register_reset(imgdata);
     } break;
-    case KEY_INVALID:
     default:
+        return;
+    }
+    imgdata->state = DATA_STATE_WORKING;
+    printf("\33[2K\rWorking...");
+    fflush(stdout);
+}
+
+static int
+_imageData_perform_action(_imageData *imgdata, unsigned int mseconds)
+{
+    if (imgdata->state == DATA_STATE_IDLE) {
+        msleep(mseconds);
         return 0;
     }
+    imgdata->target_ticks = SDL_GetTicks64() + mseconds;
     _imageData_update_pixels(imgdata);
+    if (_imageData_is_complete(imgdata)) {
+        imgdata->state = DATA_STATE_IDLE;
+        printf("\33[2K\rReady...");
+        fflush(stdout);
+    }
     return 1;
 }
 
@@ -833,10 +895,16 @@ ImageData_free(void)
     _imgdata = NULL;
 }
 
-int
-ImageData_action(enum Key key)
+void
+ImageData_register_action(enum Key key)
 {
-    return _imageData_action(_imgdata, key);
+    _imageData_register_action(_imgdata, key);
+}
+
+int
+ImageData_perform_action(unsigned int mseconds)
+{
+    return _imageData_perform_action(_imgdata, mseconds);
 }
 
 const float *

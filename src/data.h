@@ -8,18 +8,6 @@
 #define DATA_H_INCLUDED
 
 /**
- * Initializes ImageData object according to default settings.
- */
-void
-ImageData_init(void);
-
-/**
- * Frees memory of global ImageData object.
- */
-void
-ImageData_free(void);
-
-/**
  * Enumerator for key inputs
  */
 enum Key {
@@ -34,15 +22,35 @@ enum Key {
 };
 
 /**
- * Performs global ImageData object according to keypress in `key`. Returns
- * nonzero value if an action has been performed.
+ * Initializes ImageData object according to default settings.
+ */
+void
+ImageData_init(void);
+
+/**
+ * Frees memory of global ImageData object.
+ */
+void
+ImageData_free(void);
+
+/**
+ * Registers action according to keypress in `key` to global ImageData object.
  *
  * @param[in] key pressed key
+ */
+void
+ImageData_register_action(enum Key key);
+
+/**
+ * Performs registered action on global ImageData object for `mseconds`
+ * milliseconds. Returns nonzero value if an action has been performed.
+ *
+ * @param[in] mseconds pressed key
  *
  * @return nonzero value if an action has been performed
  */
 int
-ImageData_action(enum Key key);
+ImageData_perform_action(unsigned int mseconds);
 
 /**
  * Returns global array of pixel data.
