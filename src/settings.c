@@ -3,8 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <cjson/cJSON.h>
-
 #include "log.h"
 
 #define DEFAULT_MAXIMUM_ITERATIONS UINT16_C(500)
@@ -19,192 +17,39 @@
 #define DEFAULT_CENTRE_REAL -0.5
 #define DEFAULT_CENTRE_IMAG 0.0
 
-static Settings _global_settings = {
-  .max_itrs = DEFAULT_MAXIMUM_ITERATIONS,
-  .num_chnks_re = DEFAULT_NUMBER_CHUNKS_REAL,
-  .num_chnks_im = DEFAULT_NUMBER_CHUNKS_IMAG,
-  .zoom_fac = DEFAULT_ZOOM_FACTOR,
-  .width = DEFAULT_WIDTH,
-  .height = DEFAULT_HEIGHT,
-  .max_re = DEFAULT_MAXIMUM_REAL,
-  .min_re = DEFAULT_MINIMUM_REAL,
-  .cntr_re = DEFAULT_CENTRE_REAL,
-  .cntr_im = DEFAULT_CENTRE_IMAG,
-};
-
-const Settings *const GLOBAL_SETTINGS = &_global_settings;
-
-static cJSON *
-_cJSON_read(const char *str)
-{
-    cJSON *const json = cJSON_Parse(str);
-    if (json == NULL) {
-        const char *errptr = cJSON_GetErrorPtr();
-        log_err("Error while reading JSON before '%s'!\n", errptr);
+#define DEFAULT_SETTINGS                                                       \
+    {                                                                          \
+      .max_itrs = DEFAULT_MAXIMUM_ITERATIONS,                                  \
+      .num_chnks_re = DEFAULT_NUMBER_CHUNKS_REAL,                              \
+      .num_chnks_im = DEFAULT_NUMBER_CHUNKS_IMAG,                              \
+      .zoom_fac = DEFAULT_ZOOM_FACTOR,                                         \
+      .width = DEFAULT_WIDTH,                                                  \
+      .height = DEFAULT_HEIGHT,                                                \
+      .max_re = DEFAULT_MAXIMUM_REAL,                                          \
+      .min_re = DEFAULT_MINIMUM_REAL,                                          \
+      .cntr_im = DEFAULT_CENTRE_IMAG,                                          \
     }
-    return json;
+
+static Settings _global_settings = DEFAULT_SETTINGS;
+
+const Settings *
+Settings_get_global(void)
+{
+    return &_global_settings;
 }
 
-static char *
-_file_to_str(FILE *in)
+void
+Settings_set_global(const Settings *settings)
 {
-    fseek(in, 0L, SEEK_END);
-    const long fsize = ftell(in) + 1;
-    rewind(in);
-
-    char *const fstr = malloc(fsize * sizeof *fstr);
-    if (fstr == NULL) {
-        log_err("Cannot allocate memory for copy of file!\n");
-        return NULL;
-    }
-    const size_t size = fread(fstr, 1UL, fsize, in);
-    if (size != (size_t) fsize - 1) {
-        log_err("Cannot copy contents of file!\n");
-        free(fstr);
-        return NULL;
-    }
-    return fstr;
-}
-
-static void
-_settings_from_cJSON(Settings *settings, cJSON *json)
-{
-    const cJSON *item = NULL;
-
-#define JSON_TO_MEMBER(member)                                                 \
-    do {                                                                       \
-        item = cJSON_GetObjectItemCaseSensitive(json, #member);                \
-        if (item != NULL) {                                                    \
-            settings->member = cJSON_GetNumberValue(item);                     \
-        }                                                                      \
-    } while (0)
-
-    JSON_TO_MEMBER(max_itrs);
-    JSON_TO_MEMBER(num_chnks_re);
-    JSON_TO_MEMBER(num_chnks_im);
-    JSON_TO_MEMBER(zoom_fac);
-
-    JSON_TO_MEMBER(width);
-    JSON_TO_MEMBER(height);
-    JSON_TO_MEMBER(max_re);
-    JSON_TO_MEMBER(min_re);
-    JSON_TO_MEMBER(cntr_re);
-    JSON_TO_MEMBER(cntr_im);
-
-#undef JSON_TO_MEMBER
+    _global_settings = *settings;
 }
 
 Settings *
-Settings_create_from_file(const char *fname)
+Settings_create(void)
 {
     Settings *const settings = malloc(sizeof *settings);
 
-    Settings_read(settings, fname);
-
     return settings;
-}
-
-void
-Settings_fill_from_string(Settings *settings, const char *str)
-{
-    cJSON *const json = _cJSON_read(str);
-    if (json == NULL) {
-        return;
-    }
-    _settings_from_cJSON(settings, json);
-}
-
-void
-Settings_fread(Settings *settings, FILE *in)
-{
-    char *const str = _file_to_str(in);
-    Settings_fill_from_string(settings, str);
-    free(str);
-}
-
-void
-Settings_read(Settings *settings, const char *fname)
-{
-    FILE *const in = fopen(fname, "r");
-    if (in == NULL) {
-        log_err("Cannot open file '%s'!\n", fname);
-        return;
-    }
-    Settings_fread(settings, in);
-    fclose(in);
-}
-
-static cJSON *
-_cJSON_from_settings(const Settings *settings)
-{
-    cJSON *const json = cJSON_CreateObject();
-
-    cJSON *item = NULL;
-
-    /* This is evil and I love it */
-#define MEMBER_TO_JSON(member)                                                 \
-    do {                                                                       \
-        item = cJSON_CreateNumber((double) settings->member);                  \
-        if (item == NULL) {                                                    \
-            goto err;                                                          \
-        }                                                                      \
-        cJSON_AddItemToObject(json, #member, item);                            \
-    } while (0)
-
-    MEMBER_TO_JSON(max_itrs);
-    MEMBER_TO_JSON(num_chnks_re);
-    MEMBER_TO_JSON(num_chnks_im);
-    MEMBER_TO_JSON(zoom_fac);
-
-    MEMBER_TO_JSON(width);
-    MEMBER_TO_JSON(height);
-    MEMBER_TO_JSON(max_re);
-    MEMBER_TO_JSON(min_re);
-    MEMBER_TO_JSON(cntr_re);
-    MEMBER_TO_JSON(cntr_im);
-
-#undef MEMBER_TO_JSON
-
-    return json;
-err:
-    log_err("Error while creating JSON!\n");
-    cJSON_Delete(json);
-    return NULL;
-}
-
-char *
-Settings_to_string(const Settings *settings)
-{
-    cJSON *const json = _cJSON_from_settings(settings);
-    if (json == NULL) {
-        return NULL;
-    }
-    char *const str = cJSON_Print(json);
-    cJSON_Delete(json);
-    return str;
-}
-
-void
-Settings_fwrite(const Settings *settings, FILE *out)
-{
-    char *const str = Settings_to_string(settings);
-    if (str == NULL) {
-        return;
-    }
-    fprintf(out, "%s\n", str);
-    free(str);
-}
-
-void
-Settings_write(const Settings *settings, const char *fname)
-{
-    FILE *const out = fopen(fname, "w");
-    if (out == NULL) {
-        log_err("Cannot open file '%s'!\n", fname);
-        return;
-    }
-    Settings_fwrite(settings, out);
-    fclose(out);
 }
 
 void
@@ -218,10 +63,88 @@ Settings_free(Settings *settings)
 }
 
 double
+Settings_get_center_real(const Settings *settings)
+{
+    return (settings->min_re + settings->max_re) / 2;
+}
+
+double
+Settings_get_center_imag(const Settings *settings)
+{
+    return settings->cntr_im;
+}
+
+double
 Settings_get_units_per_pixel(const Settings *settings)
 {
     const int width = settings->width;
     const double max_re = settings->max_re;
     const double min_re = settings->min_re;
     return (max_re - min_re) / width;
+}
+
+void
+Settings_fill_from_Json(Settings *settings, const Json *json)
+{
+#define JSON_TO_MEMBER(TYPE, MEMBER)                                           \
+    Json_elem_to_##TYPE(json, #MEMBER, &settings->MEMBER)
+
+    JSON_TO_MEMBER(uint16_t, max_itrs);
+    JSON_TO_MEMBER(int, num_chnks_re);
+    JSON_TO_MEMBER(int, num_chnks_im);
+    JSON_TO_MEMBER(double, zoom_fac);
+
+    JSON_TO_MEMBER(int, width);
+    JSON_TO_MEMBER(int, height);
+    JSON_TO_MEMBER(double, max_re);
+    JSON_TO_MEMBER(double, min_re);
+    JSON_TO_MEMBER(double, cntr_im);
+
+#undef JSON_TO_MEMBER
+}
+
+void
+Settings_fill_from_Json_void(void *vsettings, const Json *json)
+{
+    Settings_fill_from_Json(vsettings, json);
+}
+
+Json *
+Settings_to_Json(const Settings *settings)
+{
+    Json *const json = Json_create();
+
+#define MEMBER_TO_JSON(TYPE, MEMBER)                                           \
+    do {                                                                       \
+        const int status = Json_add_##TYPE(json, #MEMBER, settings->MEMBER);   \
+        if (status != EXIT_SUCCESS) {                                          \
+            log_err(                                                           \
+              "Error while creating JSON from Settings member '%s'!\n",        \
+              #MEMBER                                                          \
+            );                                                                 \
+            Json_delete(json);                                                 \
+            return NULL;                                                       \
+        }                                                                      \
+    } while (0)
+
+    MEMBER_TO_JSON(uint16_t, max_itrs);
+    MEMBER_TO_JSON(int, num_chnks_re);
+    MEMBER_TO_JSON(int, num_chnks_im);
+    MEMBER_TO_JSON(double, zoom_fac);
+
+    MEMBER_TO_JSON(int, width);
+    MEMBER_TO_JSON(int, height);
+    MEMBER_TO_JSON(double, max_re);
+    MEMBER_TO_JSON(double, min_re);
+    MEMBER_TO_JSON(double, cntr_im);
+
+#undef MEMBER_TO_JSON
+
+    return json;
+}
+
+Json *
+Settings_to_Json_void(const void *vsettings)
+{
+    return Settings_to_Json(vsettings);
 }

@@ -19,6 +19,8 @@ enum Key {
     KEY_LEFT,
     KEY_RIGHT,
     KEY_RESET,
+    KEY_VIEW_SAVE,
+    KEY_VIEW_LOAD,
 };
 
 /**

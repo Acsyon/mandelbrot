@@ -8,7 +8,8 @@
 #define SETTINGS_H_INCLUDED
 
 #include <stdint.h>
-#include <stdio.h>
+
+#include "json.h"
 
 /**
  * Struct for settings
@@ -22,83 +23,32 @@ typedef struct {
     int height;        /* Height of window in pixels */
     double max_re;     /* Maximum value of real part */
     double min_re;     /* Maximum value of imaginary part */
-    double cntr_re;    /* Real part of centre point of window */
     double cntr_im;    /* Imaginary part of centre point of window */
 } Settings;
 
 /**
- * Pointer to global settings
+ * Returns pointer to global settings.
+ * 
+ * @return pointer to global settings
  */
-extern const Settings *const GLOBAL_SETTINGS;
+const Settings *
+Settings_get_global(void);
 
 /**
- * Creates newly malloc'd Settings object filled with the values in the JSON
- * config file in `fname`.
+ * Sets global settings to values pointed to by `values`.
+ * 
+ * @param[in] settings pointer to Settings object to set global settings to
+ */
+void
+Settings_set_global(const Settings *settings);
+
+/**
+ * Creates newly malloc'd (and default-initialized) Settings object.
  *
- * @param[in] fname file name of config file to read values from
- *
- * @return newly malloc'd Settings objects
+ * @return pointer to newly malloc'd (and default-initialized) Settings object
  */
 Settings *
-Settings_create_from_file(const char *fname);
-
-/**
- * Fills Settings object `settings` with the values in the JSON config file
- * whose contents are stored in string `str`.
- *
- * @param[out] settings Settings object to write values into
- * @param[in] str contents of config file to read values from
- */
-void
-Settings_fill_from_string(Settings *settings, const char *str);
-
-/**
- * Fills Settings object `settings` with the values in the JSON config file
- * opened in file stream `in`.
- *
- * @param[out] settings Settings object to write values into
- * @param[in] in stream of config file to read values from
- */
-void
-Settings_fread(Settings *settings, FILE *in);
-
-/**
- * Fills Settings object `settings` with the values in the JSON config file in
- * `fname`.
- *
- * @param[out] settings Settings object to write values into
- * @param[in] fname file name of config file to read values from
- */
-void
-Settings_read(Settings *settings, const char *fname);
-
-/**
- * Creates newly malloc'd string containing `settings` as a JSON object.
- *
- * @param[out] settings Settings object to convert to string
- *
- * @return newly malloc'd string containing `settings` as a JSON object
- */
-char *
-Settings_to_string(const Settings *settings);
-
-/**
- * Writes `settings` as a JSON object to output stream `out`.
- *
- * @param[in] settings Settings object to write
- * @param[out] out output stream to write into
- */
-void
-Settings_fwrite(const Settings *settings, FILE *out);
-
-/**
- * Writes `settings` as a JSON object to file `fname`.
- *
- * @param[in] settings Settings object to write
- * @param[in] out name of file to write into
- */
-void
-Settings_write(const Settings *settings, const char *fname);
+Settings_create(void);
 
 /**
  * Frees memory pointed to by `settings`.
@@ -109,8 +59,30 @@ void
 Settings_free(Settings *settings);
 
 /**
+ * Returns real component of centre point according to parameters in `settings`.
+ *
+ * @param[in] settings Settings object to get real component of centre of
+ *
+ * @return real component of centre point according to parameters in `settings`
+ */
+double
+Settings_get_center_real(const Settings *settings);
+
+/**
+ * Returns imaginary component of centre point according to parameters in
+ * `settings`.
+ *
+ * @param[in] settings Settings object to get imaginary component of centre of
+ *
+ * @return imaginary component of centre point according to parameters in
+ * `settings`
+ */
+double
+Settings_get_center_imag(const Settings *settings);
+
+/**
  * Returns number of mathematical length units per pixel according to parameters
- * in `settings`
+ * in `settings`.
  *
  * @param[in] settings Settings object to get units per pixel from
  *
@@ -118,5 +90,45 @@ Settings_free(Settings *settings);
  */
 double
 Settings_get_units_per_pixel(const Settings *settings);
+
+/**
+ * Fills members of `settings` according to content of `json`.
+ *
+ * @param[in, out] settings Settings object to fill
+ * @param[in] json Json object to get data from
+ */
+void
+Settings_fill_from_Json(Settings *settings, const Json *json);
+
+/**
+ * Fills members of `vsettings` according to content of `json`. Version with
+ * void pointer to be used as a 'JsonUtilReadCallback'.
+ *
+ * @param[in, out] vsettings Settings object (as void pointer) to fill
+ * @param[in] json Json object to get data from
+ */
+void
+Settings_fill_from_Json_void(void *vsettings, const Json *json);
+
+/**
+ * Returns Json object with content of `settings`.
+ *
+ * @param[in] settings Settings object to read data from
+ *
+ * @return Json object with content of `settings`
+ */
+Json *
+Settings_to_Json(const Settings *settings);
+
+/**
+ * Returns Json object with content of `settings`. Version with void pointer to
+ * be used as a 'JsonUtilWriteCallback'.
+ *
+ * @param[in] vsettings Settings object (as void pointer) to read data from
+ *
+ * @return Json object with content of `settings`
+ */
+Json *
+Settings_to_Json_void(const void *vsettings);
 
 #endif /* SETTINGS_H_INCLUDED */

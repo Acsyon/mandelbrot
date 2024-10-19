@@ -116,6 +116,10 @@ _keymap(SDL_Keycode sdl_key)
     case SDLK_KP_0:
     case SDLK_0:
         return KEY_RESET;
+    case SDLK_F5:
+        return KEY_VIEW_SAVE;
+    case SDLK_F9:
+        return KEY_VIEW_LOAD;
     default:
         return KEY_INVALID;
     }
@@ -171,7 +175,8 @@ Video_init(void)
         return;
     }
 
-    _video = _videoData_alloc(GLOBAL_SETTINGS);
+    const Settings *const settings = Settings_get_global();
+    _video = _videoData_alloc(settings);
 }
 
 void

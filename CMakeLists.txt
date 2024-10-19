@@ -68,10 +68,13 @@ set(SOURCE_FILES
     src/main.c
     src/color.c
     src/data.c
+    src/json.c
     src/log.c
     src/settings.c
     src/sys.c
+    src/util.c
     src/video.c
+    src/view.c
 )
 
 # Compile
