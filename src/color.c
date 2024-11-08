@@ -26,11 +26,15 @@ _float2rgb(float r, float g, float b)
 static inline _argb
 _u322rgb(uint32_t u)
 {
+    uint32_t tmp = u;
     _argb rgb = {0};
-    rgb.a = (u /= UINT32_C(0x01000000));
-    rgb.r = (u /= UINT32_C(0x00010000));
-    rgb.g = (u /= UINT32_C(0x00000100));
-    rgb.b = (u /= UINT32_C(0x00000001));
+    rgb.a = (tmp / UINT32_C(0x01000000));
+    tmp = tmp % 0x01000000;
+    rgb.r = (tmp / UINT32_C(0x00010000));
+    tmp = tmp % 0x00010000;
+    rgb.g = (tmp / UINT32_C(0x00000100));
+    tmp = tmp % 0x00000100;
+    rgb.b = (tmp / UINT32_C(0x00000001));
     return rgb;
 }
 
@@ -67,22 +71,22 @@ _float2hsv(float h, float s, float v)
 static _argb
 _hsv2rgb(_ahsv hsv)
 {
-    float h = 1.0f * hsv.h;
+    float h = 1.0F * hsv.h;
     const float s = hsv.s;
     const float v = hsv.v;
 
     /* Achromatic (grey) */
-    if (s == 0) {
+    if (s == 0.0F) {
         return _float2rgb(v, v, v);
     }
 
-    h /= 60.0f; /* Sector 0 to 5 or 6 (= full circle) */
+    h /= 60.0F; /* Sector 0 to 5 or 6 (= full circle) */
     const int i = (int) h;
 
     const float f = h - i; /* Fractional part of h */
-    const float p = v * (1.0f - s);
-    const float q = v * (1.0f - s * f);
-    const float t = v * (1.0f - s * (1.0f - f));
+    const float p = v * (1.0F - s);
+    const float q = v * (1.0F - s * f);
+    const float t = v * (1.0F - s * (1.0F - f));
 
     switch (i) {
     default:
@@ -104,45 +108,45 @@ _hsv2rgb(_ahsv hsv)
 static _ahsv
 _rgb2hsv(_argb rgb)
 {
-    const float r = 1.0f * rgb.r / UINT8_MAX;
-    const float g = 1.0f * rgb.g / UINT8_MAX;
-    const float b = 1.0f * rgb.b / UINT8_MAX;
+    const float r = 1.0F * rgb.r / UINT8_MAX;
+    const float g = 1.0F * rgb.g / UINT8_MAX;
+    const float b = 1.0F * rgb.b / UINT8_MAX;
 
     const float max = fmaxf(r, fmaxf(g, b));
     const float min = fminf(r, fminf(g, b));
     const float delta = max - min;
 
-    float h = 0;
-    float s = 0.0f;
+    float h = 0.0F;
+    float s = 0.0F;
     const float v = max; /* Value */
 
     /* r = g = b = 0 (black) */
-    if (max == 0.0) {
+    if (max == 0.0F) {
         return _float2hsv(h, s, v);
     }
 
     s = delta / max; /* Saturation */
 
     /* Achromatic (grey) */
-    if (delta == 0.0f) {
+    if (delta == 0.0F) {
         return _float2hsv(h, s, v);
     }
 
     if (r == max) {
-        h = 0.0f + (g - b) / delta; /* between yellow and magenta */
+        h = 0.0F + (g - b) / delta; /* between yellow and magenta */
     } else if (g == max) {
-        h = 2.0f + (b - r) / delta; /* between cyan and yellow */
+        h = 2.0F + (b - r) / delta; /* between cyan and yellow */
     } else {
-        h = 4.0f + (r - g) / delta; /* between magenta and cyan */
+        h = 4.0F + (r - g) / delta; /* between magenta and cyan */
     }
 
-    h *= 60.0f; /* Convert to degrees */
+    h *= 60.0F; /* Convert to degrees */
 
-    if (h < 0) {
-        h += 360.0f;
+    if (h < 0.0F) {
+        h += 360.0F;
     }
 
-    return _float2hsv(h / 360.0f, s, v);
+    return _float2hsv(h / 360.0F, s, v);
 }
 
 static inline uint32_t
@@ -155,7 +159,7 @@ _hsv2u32(_ahsv hsv)
 uint32_t
 Palette_gray(float pos)
 {
-    const uint8_t val = powf(pos, 1.0 / 1.5) * UINT8_MAX;
+    const uint8_t val = powf(pos, 1.0F / 1.5F) * UINT8_MAX;
     uint32_t res = 0;
     res += val * UINT32_C(0x00010000);
     res += val * UINT32_C(0x00000100);
@@ -166,21 +170,21 @@ Palette_gray(float pos)
 uint32_t
 Palette_red(float pos)
 {
-    const uint8_t val = powf(pos, 1.0 / 1.5) * UINT8_MAX;
+    const uint8_t val = powf(pos, 1.0F / 1.5F) * UINT8_MAX;
     return val * UINT32_C(0x00010000);
 }
 
 uint32_t
 Palette_green(float pos)
 {
-    const uint8_t val = powf(pos, 1.0 / 1.5) * UINT8_MAX;
+    const uint8_t val = powf(pos, 1.0F / 1.5F) * UINT8_MAX;
     return val * UINT32_C(0x00000100);
 }
 
 uint32_t
 Palette_blue(float pos)
 {
-    const uint8_t val = powf(pos, 1.0 / 1.5) * UINT8_MAX;
+    const uint8_t val = powf(pos, 1.0F / 1.5F) * UINT8_MAX;
     return val * UINT32_C(0x00000001);
 }
 
@@ -192,9 +196,9 @@ Palette_exp_hsv(float pos)
     }
     (void) &_rgb2hsv;
     const _ahsv hsv = {
-      .h = (((uint16_t) powf(pos * 360, 1.5f)) % 360),
-      .s = 1.0,
-      .v = powf(pos, 0.5f),
+      .h = (((uint16_t) powf(pos * 360, 1.5F)) % 360),
+      .s = 1.0F,
+      .v = powf(pos, 0.5F),
     };
     return _hsv2u32(hsv);
 }
@@ -204,21 +208,21 @@ _lerp_rgb_to_u32(float pos1, float pos2, _argb rgb1, _argb rgb2, float pos)
 {
     const float ratio = (pos2 - pos) / (pos2 - pos1);
     _argb rgb = {0};
-    rgb.r = rgb1.r * ratio + (1.0f - ratio) * rgb2.r;
-    rgb.g = rgb1.g * ratio + (1.0f - ratio) * rgb2.g;
-    rgb.b = rgb1.b * ratio + (1.0f - ratio) * rgb2.b;
+    rgb.r = rgb1.r * ratio + (1.0F - ratio) * rgb2.r;
+    rgb.g = rgb1.g * ratio + (1.0F - ratio) * rgb2.g;
+    rgb.b = rgb1.b * ratio + (1.0F - ratio) * rgb2.b;
     return _rgb2u32(rgb);
 }
 
 uint32_t
 Palette_ultra_fractal(float pos)
 {
-    if (pos == 0.0f) {
+    if (pos == 0.0F) {
         return 0;
     }
 
     static const float positions[] = {
-      0.0000f, 0.1600f, 0.4200f, 0.6425f, 0.8575f,
+      0.0000F, 0.1600F, 0.4200F, 0.6425F, 0.8575F,
     };
     static const _argb colors[] = {
       RGB_FROM_RAW(000, 007, 100), RGB_FROM_RAW(032, 107, 203),

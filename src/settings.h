@@ -15,32 +15,22 @@
  * Struct for settings
  */
 typedef struct {
-    uint16_t max_itrs; /* Maximum number of Mandelbrot iterations to make */
-    int num_chnks_re;  /* Number of chunks in real direction */
-    int num_chnks_im;  /* Number of chunks in imaginary direction */
-    double zoom_fac;   /* Factor for one zoom stage */
     int width;         /* Width of window in pixels */
     int height;        /* Height of window in pixels */
     double max_re;     /* Maximum value of real part */
     double min_re;     /* Maximum value of imaginary part */
     double cntr_im;    /* Imaginary part of centre point of window */
+    uint16_t max_itrs; /* Maximum number of Mandelbrot iterations to make */
+    int num_chnks_re;  /* Number of chunks in real direction */
+    int num_chnks_im;  /* Number of chunks in imaginary direction */
+    double zoom_fac;   /* Factor for one zoom stage */
+    uint16_t fps;      /* Frames per second (for intermediary updates) */
 } Settings;
 
 /**
- * Returns pointer to global settings.
- * 
- * @return pointer to global settings
+ * Pointer to default settings object
  */
-const Settings *
-Settings_get_global(void);
-
-/**
- * Sets global settings to values pointed to by `values`.
- * 
- * @param[in] settings pointer to Settings object to set global settings to
- */
-void
-Settings_set_global(const Settings *settings);
+extern const Settings *const DEFAULT_SETTINGS;
 
 /**
  * Creates newly malloc'd (and default-initialized) Settings object.
@@ -57,6 +47,16 @@ Settings_create(void);
  */
 void
 Settings_free(Settings *settings);
+
+/**
+ * Copies Settings object `settings` to newly malloc'd memory.
+ *
+ * @param[in] settings Settings object to be copied
+ *
+ * @return pointer to newly malloc'd copy of `settings`
+ */
+Settings *
+Settings_duplicate(const Settings *settings);
 
 /**
  * Returns real component of centre point according to parameters in `settings`.

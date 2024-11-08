@@ -1,14 +1,28 @@
 #include "util.h"
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <math.h>
 #include <string.h>
 
 #include "log.h"
 
 char *
-file_to_str(FILE *in)
+Util_strdup(const char *str)
+{
+    if (str == NULL) {
+        return NULL;
+    }
+
+    const size_t len = strlen(str) + 1;
+    char *cpy = malloc(len);
+    cpy = memcpy(cpy, str, len);
+
+    return cpy;
+}
+
+char *
+Util_file_to_str(FILE *in)
 {
     fseek(in, 0L, SEEK_END);
     const long fsize = ftell(in) + 1;
@@ -29,7 +43,7 @@ file_to_str(FILE *in)
 }
 
 char *
-mpf_to_str_base10(mpf_srcptr mpf)
+Util_mpf_to_str_base10(mpf_srcptr mpf)
 {
     static const int BASE = 10;
     const double log2 = log(2);

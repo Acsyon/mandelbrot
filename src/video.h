@@ -8,21 +8,32 @@
 #define VIDEO_H_INCLUDED
 
 /**
- * Initializes video stuff.
+ * Opaque Video type
  */
-void
-Video_init(void);
+typedef struct Video Video;
 
 /**
- * Quits video stuff.
+ * Initializes and returns Video object according to Settings in App.
+ *
+ * @return Video object according to Settings in App
  */
-void
-Video_quit(void);
+Video *
+Video_app_init(void);
 
 /**
- * Performs video loop on global ImageData object.
+ * Frees memory pointed to by `video`.
+ *
+ * @param[in] video pointer to Video object to be freed
  */
 void
-Video_loop(void);
+Video_free(Video *video);
+
+/**
+ * Performs video loop on `video`.
+ *
+ * @param[in] video pointer to Video object to run video loop on
+ */
+void
+Video_loop(Video *video);
 
 #endif /* VIDEO_H_INCLUDED */

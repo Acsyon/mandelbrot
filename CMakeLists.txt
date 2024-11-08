@@ -66,8 +66,10 @@ endif ()
 # Set source files
 set(SOURCE_FILES
     src/main.c
+    src/app.c
     src/color.c
     src/data.c
+    src/getopt.c
     src/json.c
     src/log.c
     src/settings.c

@@ -5,44 +5,35 @@
 
 #include "log.h"
 
-#define DEFAULT_MAXIMUM_ITERATIONS UINT16_C(500)
-#define DEFAULT_NUMBER_CHUNKS_REAL 20
-#define DEFAULT_NUMBER_CHUNKS_IMAG 20
-#define DEFAULT_ZOOM_FACTOR 0.5
-
 #define DEFAULT_WIDTH 800
 #define DEFAULT_HEIGHT 600
+
 #define DEFAULT_MAXIMUM_REAL 1.0
 #define DEFAULT_MINIMUM_REAL -2.0
 #define DEFAULT_CENTRE_REAL -0.5
 #define DEFAULT_CENTRE_IMAG 0.0
 
-#define DEFAULT_SETTINGS                                                       \
-    {                                                                          \
-      .max_itrs = DEFAULT_MAXIMUM_ITERATIONS,                                  \
-      .num_chnks_re = DEFAULT_NUMBER_CHUNKS_REAL,                              \
-      .num_chnks_im = DEFAULT_NUMBER_CHUNKS_IMAG,                              \
-      .zoom_fac = DEFAULT_ZOOM_FACTOR,                                         \
-      .width = DEFAULT_WIDTH,                                                  \
-      .height = DEFAULT_HEIGHT,                                                \
-      .max_re = DEFAULT_MAXIMUM_REAL,                                          \
-      .min_re = DEFAULT_MINIMUM_REAL,                                          \
-      .cntr_im = DEFAULT_CENTRE_IMAG,                                          \
-    }
+#define DEFAULT_MAXIMUM_ITERATIONS UINT16_C(500)
+#define DEFAULT_NUMBER_CHUNKS_REAL 20
+#define DEFAULT_NUMBER_CHUNKS_IMAG 20
+#define DEFAULT_ZOOM_FACTOR 0.5
 
-static Settings _global_settings = DEFAULT_SETTINGS;
+#define DEFAULT_FPS UINT8_C(30)
 
-const Settings *
-Settings_get_global(void)
-{
-    return &_global_settings;
-}
+static const Settings DEFAULT_SETTINGS_OBJECT = {
+  .width = DEFAULT_WIDTH,
+  .height = DEFAULT_HEIGHT,
+  .max_re = DEFAULT_MAXIMUM_REAL,
+  .min_re = DEFAULT_MINIMUM_REAL,
+  .cntr_im = DEFAULT_CENTRE_IMAG,
+  .max_itrs = DEFAULT_MAXIMUM_ITERATIONS,
+  .num_chnks_re = DEFAULT_NUMBER_CHUNKS_REAL,
+  .num_chnks_im = DEFAULT_NUMBER_CHUNKS_IMAG,
+  .zoom_fac = DEFAULT_ZOOM_FACTOR,
+  .fps = DEFAULT_FPS,
+};
 
-void
-Settings_set_global(const Settings *settings)
-{
-    _global_settings = *settings;
-}
+const Settings *const DEFAULT_SETTINGS = &DEFAULT_SETTINGS_OBJECT;
 
 Settings *
 Settings_create(void)
@@ -60,6 +51,14 @@ Settings_free(Settings *settings)
     }
 
     free(settings);
+}
+
+Settings *
+Settings_duplicate(const Settings *settings)
+{
+    Settings *const dup = malloc(sizeof *dup);
+
+    return memcpy(dup, settings, sizeof *settings);
 }
 
 double
@@ -89,16 +88,19 @@ Settings_fill_from_Json(Settings *settings, const Json *json)
 #define JSON_TO_MEMBER(TYPE, MEMBER)                                           \
     Json_elem_to_##TYPE(json, #MEMBER, &settings->MEMBER)
 
+    JSON_TO_MEMBER(int, width);
+    JSON_TO_MEMBER(int, height);
+
+    JSON_TO_MEMBER(double, max_re);
+    JSON_TO_MEMBER(double, min_re);
+    JSON_TO_MEMBER(double, cntr_im);
+
     JSON_TO_MEMBER(uint16_t, max_itrs);
     JSON_TO_MEMBER(int, num_chnks_re);
     JSON_TO_MEMBER(int, num_chnks_im);
     JSON_TO_MEMBER(double, zoom_fac);
 
-    JSON_TO_MEMBER(int, width);
-    JSON_TO_MEMBER(int, height);
-    JSON_TO_MEMBER(double, max_re);
-    JSON_TO_MEMBER(double, min_re);
-    JSON_TO_MEMBER(double, cntr_im);
+    JSON_TO_MEMBER(uint16_t, fps);
 
 #undef JSON_TO_MEMBER
 }
@@ -127,16 +129,19 @@ Settings_to_Json(const Settings *settings)
         }                                                                      \
     } while (0)
 
+    MEMBER_TO_JSON(int, width);
+    MEMBER_TO_JSON(int, height);
+
+    MEMBER_TO_JSON(double, max_re);
+    MEMBER_TO_JSON(double, min_re);
+    MEMBER_TO_JSON(double, cntr_im);
+
     MEMBER_TO_JSON(uint16_t, max_itrs);
     MEMBER_TO_JSON(int, num_chnks_re);
     MEMBER_TO_JSON(int, num_chnks_im);
     MEMBER_TO_JSON(double, zoom_fac);
 
-    MEMBER_TO_JSON(int, width);
-    MEMBER_TO_JSON(int, height);
-    MEMBER_TO_JSON(double, max_re);
-    MEMBER_TO_JSON(double, min_re);
-    MEMBER_TO_JSON(double, cntr_im);
+    MEMBER_TO_JSON(uint16_t, fps);
 
 #undef MEMBER_TO_JSON
 

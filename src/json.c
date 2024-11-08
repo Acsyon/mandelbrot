@@ -110,7 +110,7 @@ JsonUtil_fill_from_string(
 void
 JsonUtil_fread(void *obj, FILE *in, JsonUtilReadCallback *callback)
 {
-    char *const str = file_to_str(in);
+    char *const str = Util_file_to_str(in);
     JsonUtil_fill_from_string(obj, str, callback);
     free(str);
 }

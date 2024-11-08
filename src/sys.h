@@ -9,7 +9,7 @@
 
 /**
  * Sleep for `mseconds` milliseconds.
- * 
+ *
  * @param[in] mseconds number of milliseconds to sleep
  */
 void

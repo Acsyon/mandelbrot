@@ -12,6 +12,16 @@
 #include <gmp.h>
 
 /**
+ * Copies string `str` to newly malloc'd memory.
+ *
+ * @param[in] str string to be copied
+ *
+ * @return pointer to newly malloc'd copy of `str`
+ */
+char *
+Util_strdup(const char *str);
+
+/**
  * Reads contents of file into newly malloc'd string.
  *
  * @param[in] in FILE stream to read data from
@@ -19,7 +29,7 @@
  * @return newly malloc'd string with contents of `in` (NULL for error)
  */
 char *
-file_to_str(FILE *in);
+Util_file_to_str(FILE *in);
 
 /**
  * Converts GMP floating point number `mpf` (in base 10) to a newly malloc'd
@@ -30,6 +40,6 @@ file_to_str(FILE *in);
  * @return newly malloc'd string of GMP floating point number
  */
 char *
-mpf_to_str_base10(mpf_srcptr mpf);
+Util_mpf_to_str_base10(mpf_srcptr mpf);
 
 #endif /* UTIL_H_INCLUDED */

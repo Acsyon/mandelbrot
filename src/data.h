@@ -24,42 +24,55 @@ enum Key {
 };
 
 /**
- * Initializes ImageData object according to default settings.
+ * Opaque ImageData type
  */
-void
-ImageData_init(void);
+typedef struct ImageData ImageData;
 
 /**
- * Frees memory of global ImageData object.
- */
-void
-ImageData_free(void);
-
-/**
- * Registers action according to keypress in `key` to global ImageData object.
+ * Initializes and returns ImageData object according to Settings in App.
  *
+ * @return ImageData object according to Settings in App
+ */
+ImageData *
+ImageData_app_init(void);
+
+/**
+ * Frees memory pointed to by `imgdata`.
+ *
+ * @param[in] imgdata pointer to ImageData object to be freed
+ */
+void
+ImageData_free(ImageData *imgdata);
+
+/**
+ * Registers action according to keypress in `key` to `imgdata`.
+ *
+ * @param[in] imgdata pointer to ImageData object to register action to
  * @param[in] key pressed key
  */
 void
-ImageData_register_action(enum Key key);
+ImageData_register_action(ImageData *imgdata, enum Key key);
 
 /**
- * Performs registered action on global ImageData object for `mseconds`
+ * Performs registered action on `imgdata` for `mseconds`
  * milliseconds. Returns nonzero value if an action has been performed.
  *
+ * @param[in] imgdata pointer to ImageData object to perform action on
  * @param[in] mseconds pressed key
  *
  * @return nonzero value if an action has been performed
  */
 int
-ImageData_perform_action(unsigned int mseconds);
+ImageData_perform_action(ImageData *imgdata, unsigned int mseconds);
 
 /**
- * Returns global array of pixel data.
+ * Returns array of pixel data in `imgdata`.
  *
- * @return global array of pixel data
+ * @param[in] imgdata pointer to ImageData object to get pixel data of
+ *
+ * @return array of pixel data in `imgdata`
  */
 const float *
-ImageData_get_pixel_data(void);
+ImageData_get_pixel_data(const ImageData *imgdata);
 
 #endif /* DATA_H_INCLUDED */

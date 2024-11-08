@@ -4,24 +4,24 @@
 
 #include <SDL2/SDL.h>
 
+#include "app.h"
 #include "color.h"
 #include "data.h"
 #include "log.h"
 #include "settings.h"
 #include "sys.h"
 
-#define FPS UINT8_C(30)
-
-typedef struct {
-    const Settings *settings;
+struct Video {
+    Settings *settings;
+    ImageData *imgdata;
     SDL_Window *window;
     SDL_Surface *surface;
     SDL_Surface *image;
     Palette_fnc *palette;
-} _videoData;
+};
 
 static void
-_videoData_free(_videoData *video)
+_video_free(Video *video)
 {
     if (video == NULL) {
         return;
@@ -31,15 +31,18 @@ _videoData_free(_videoData *video)
     SDL_FreeSurface(video->surface);
     SDL_DestroyWindow(video->window);
 
+    Settings_free(video->settings);
+
     free(video);
 }
 
-static _videoData *
-_videoData_alloc(const Settings *settings)
+static Video *
+_video_alloc(const Settings *settings, ImageData *imgdata)
 {
-    _videoData *const video = malloc(sizeof *video);
+    Video *const video = malloc(sizeof *video);
 
-    video->settings = settings;
+    video->settings = Settings_duplicate(settings);
+    video->imgdata = imgdata;
     video->window = NULL;
     video->surface = NULL;
     video->image = NULL;
@@ -54,7 +57,7 @@ _videoData_alloc(const Settings *settings)
     );
     if (video->window == NULL) {
         log_err("Window could not be created! SDL_Error: %s\n", SDL_GetError());
-        _videoData_free(video);
+        _video_free(video);
         return NULL;
     }
     video->surface = SDL_GetWindowSurface(video->window);
@@ -64,21 +67,22 @@ _videoData_alloc(const Settings *settings)
 }
 
 static void
-_videoData_draw_image(_videoData *video)
+_video_draw_image(Video *video)
 {
     SDL_BlitSurface(video->image, NULL, video->surface, NULL);
 }
 
 static void
-_videoData_write_framebuffer(_videoData *video)
+_video_write_framebuffer(Video *video)
 {
     SDL_LockSurface(video->image);
 
     const Settings *const settings = video->settings;
+    const ImageData *const imgdata = video->imgdata;
     const int width = settings->width;
     const int height = settings->height;
 
-    const float *const pxdata = ImageData_get_pixel_data();
+    const float *const pxdata = ImageData_get_pixel_data(imgdata);
     uint32_t *const buf = video->image->pixels;
 #pragma omp parallel for collapse(2)
     for (int i = 0; i < width; ++i) {
@@ -126,22 +130,25 @@ _keymap(SDL_Keycode sdl_key)
 }
 
 static void
-_videoData_loop(_videoData *video)
+_video_loop(Video *video)
 {
-    static const unsigned int MSECONDS_PER_FRAME = 1000 / FPS;
+    ImageData *const imgdata = video->imgdata;
+    const Settings *const settings = video->settings;
+    const unsigned int MSECONDS_PER_FRAME = 1000 / settings->fps;
     SDL_Event event;
     for (;;) {
-        if (ImageData_perform_action(MSECONDS_PER_FRAME)) {
-            _videoData_write_framebuffer(video);
+        if (ImageData_perform_action(imgdata, MSECONDS_PER_FRAME)) {
+            _video_write_framebuffer(video);
         }
-        _videoData_draw_image(video);
+        _video_draw_image(video);
         SDL_UpdateWindowSurface(video->window);
-        
+
         SDL_PollEvent(&event);
         SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
         if (event.type == SDL_QUIT) {
             return;
-        } else if (event.type == SDL_KEYDOWN) {
+        }
+        if (event.type == SDL_KEYDOWN) {
             const SDL_Keycode keycode = event.key.keysym.sym;
             switch (keycode) {
             case SDLK_ESCAPE:
@@ -149,47 +156,33 @@ _videoData_loop(_videoData *video)
                 return;
             default: {
                 const enum Key key = _keymap(keycode);
-                ImageData_register_action(key);
+                ImageData_register_action(imgdata, key);
             } break;
             }
         }
     }
 }
 
-/**
- * Global Video object
- */
-static _videoData *_video = NULL;
-
-void
-Video_init(void)
+Video *
+Video_app_init(void)
 {
-    if (_video != NULL) {
-        return;
+    Video *const video = App_get_video();
+    if (video != NULL) {
+        return video;
     }
-
-    ImageData_init();
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        log_err("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
-        Video_quit();
-        return;
-    }
-
-    const Settings *const settings = Settings_get_global();
-    _video = _videoData_alloc(settings);
+    const Settings *const settings = App_get_settings();
+    ImageData *const imgdata = App_get_image_data();
+    return _video_alloc(settings, imgdata);
 }
 
 void
-Video_quit(void)
+Video_free(Video *video)
 {
-    _videoData_free(_video);
-    _video = NULL;
-    SDL_Quit();
-    ImageData_free();
+    _video_free(video);
 }
 
 void
-Video_loop(void)
+Video_loop(Video *video)
 {
-    _videoData_loop(_video);
+    _video_loop(video);
 }

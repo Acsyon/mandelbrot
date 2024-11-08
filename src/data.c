@@ -9,12 +9,14 @@
 #include <gmp.h>
 #include <omp.h>
 
+#include "app.h"
 #include "color.h"
 #include "settings.h"
 #include "sys.h"
 #include "view.h"
 
-#define DEFAULT_VIEW_SAVE_FILE "../config/view.json"
+#define FILENAME_BUFFER_SIZE 4096
+#define VIEW_SAVE_FILE "view.json"
 
 #define INITIAL_PRECISION GMP_LIMB_BITS
 #define ITERATION_CUTOFF_ABSOLUTE_VALUE 2.0
@@ -187,14 +189,14 @@ _pixelData_iterate(_pixelData *px, _pixelDataBuffer *buf, uint16_t max_itrs)
 
         mpf_add(buf->abs_sqr, buf->re_sqr, buf->im_sqr);
         if (mpf_cmp(buf->abs_sqr, buf->max_sqr) > 0) {
-            px->itrs = 1.0f * itrs / max_itrs;
+            px->itrs = 1.0F * itrs / max_itrs;
             return;
         }
 
         if (MPF_IS_SIMILAR(buf->re, buf->re_old, buf->tmp)
             && MPF_IS_SIMILAR(buf->im, buf->im_old, buf->tmp))
         {
-            px->itrs = 0.0f;
+            px->itrs = 0.0F;
             return;
         }
 
@@ -206,7 +208,7 @@ _pixelData_iterate(_pixelData *px, _pixelDataBuffer *buf, uint16_t max_itrs)
         }
     }
 
-    px->itrs = 0.0f; /* Converged I guess.. */
+    px->itrs = 0.0F; /* Converged I guess.. */
 }
 
 /* -------------------------------------------------------------------------- */
@@ -304,8 +306,8 @@ _chunkData_clear(_chunkData *chunks)
 /**
  * ImageData container struct
  */
-typedef struct {
-    Settings settings;
+struct ImageData {
+    Settings *settings;
     mp_bitcnt_t prec;
     View *view;
     mpf_t action_buf;
@@ -316,26 +318,27 @@ typedef struct {
     float *framebuf;
     enum DataState state;
     uint64_t target_ticks;
-} _imageData;
+    char view_fname[FILENAME_BUFFER_SIZE];
+};
 
 static void
-_imageData_init_mpf(_imageData *imgdata)
+_imageData_init_mpf(ImageData *imgdata)
 {
     mpf_init(imgdata->action_buf);
 }
 
 static void
-_imageData_init_view(_imageData *imgdata)
+_imageData_init_view(ImageData *imgdata)
 {
-    const Settings *const settings = &imgdata->settings;
+    const Settings *const settings = imgdata->settings;
     imgdata->view = View_create();
     View_fill_from_Settings(imgdata->view, settings);
 }
 
 static void
-_imageData_init_data(_imageData *imgdata)
+_imageData_init_data(ImageData *imgdata)
 {
-    const Settings *const settings = &imgdata->settings;
+    const Settings *const settings = imgdata->settings;
     const int num_tot = settings->width * settings->height;
     imgdata->data = malloc(num_tot * sizeof *imgdata->data);
     for (int i = 0; i < num_tot; ++i) {
@@ -345,7 +348,7 @@ _imageData_init_data(_imageData *imgdata)
 }
 
 static void
-_imageData_init_tbuf(_imageData *imgdata)
+_imageData_init_tbuf(ImageData *imgdata)
 {
     const int tnum = imgdata->tnum = omp_get_max_threads();
     imgdata->tbuf = malloc(tnum * sizeof *imgdata->tbuf);
@@ -362,20 +365,20 @@ _imageData_init_tbuf(_imageData *imgdata)
 }
 
 static void
-_imageData_init_chunks(_imageData *imgdata)
+_imageData_init_chunks(ImageData *imgdata)
 {
     _chunkData *const chunks = &imgdata->chunks;
-    const Settings *const settings = &imgdata->settings;
+    const Settings *const settings = imgdata->settings;
     _pixelData *const data = imgdata->data;
     _chunkData_init(chunks, settings, data);
 }
 
-static _imageData *
+static ImageData *
 _imageData_alloc(const Settings *settings)
 {
-    _imageData *const imgdata = malloc(sizeof *imgdata);
+    ImageData *const imgdata = malloc(sizeof *imgdata);
 
-    imgdata->settings = *settings;
+    imgdata->settings = Settings_duplicate(settings);
     imgdata->prec = INITIAL_PRECISION;
     mpf_set_default_prec(INITIAL_PRECISION);
 
@@ -386,36 +389,38 @@ _imageData_alloc(const Settings *settings)
     _imageData_init_chunks(imgdata);
 
     imgdata->state = DATA_STATE_WORKING;
+    imgdata->target_ticks = 0;
 
     return imgdata;
 }
 
 static void
-_imageData_clear_mpf(_imageData *imgdata)
+_imageData_clear_mpf(ImageData *imgdata)
 {
     mpf_clear(imgdata->action_buf);
 }
 
 static void
-_imageData_clear_view(_imageData *imgdata)
+_imageData_clear_view(ImageData *imgdata)
 {
     View_free(imgdata->view);
 }
 
 static void
-_imageData_clear_data(_imageData *imgdata)
+_imageData_clear_data(ImageData *imgdata)
 {
-    const Settings *const settings = &imgdata->settings;
+    const Settings *const settings = imgdata->settings;
     const int num_tot = settings->width * settings->height;
     for (int i = 0; i < num_tot; ++i) {
         _pixelData_clear(&imgdata->data[i]);
     }
     free(imgdata->data);
     free(imgdata->framebuf);
+    Settings_free(imgdata->settings);
 }
 
 static void
-_imageData_clear_tbuf(_imageData *imgdata)
+_imageData_clear_tbuf(ImageData *imgdata)
 {
     const int tnum = imgdata->tnum;
     for (int i = 0; i < tnum; ++i) {
@@ -425,14 +430,14 @@ _imageData_clear_tbuf(_imageData *imgdata)
 }
 
 static void
-_imageData_clear_chunks(_imageData *imgdata)
+_imageData_clear_chunks(ImageData *imgdata)
 {
     _chunkData *const chunks = &imgdata->chunks;
     _chunkData_clear(chunks);
 }
 
 static void
-_imageData_clear(_imageData *imgdata)
+_imageData_clear(ImageData *imgdata)
 {
     _imageData_clear_mpf(imgdata);
     _imageData_clear_view(imgdata);
@@ -442,23 +447,23 @@ _imageData_clear(_imageData *imgdata)
 }
 
 static void
-_imageData_set_prec_mpf(_imageData *imgdata)
+_imageData_set_prec_mpf(ImageData *imgdata)
 {
     const mp_bitcnt_t prec = imgdata->prec;
     mpf_set_prec(imgdata->action_buf, prec);
 }
 
 static void
-_imageData_set_prec_view(_imageData *imgdata)
+_imageData_set_prec_view(ImageData *imgdata)
 {
     const mp_bitcnt_t prec = imgdata->prec;
     View_set_precision(imgdata->view, prec);
 }
 
 static void
-_imageData_set_prec_data(_imageData *imgdata)
+_imageData_set_prec_data(ImageData *imgdata)
 {
-    const Settings *const settings = &imgdata->settings;
+    const Settings *const settings = imgdata->settings;
     const int num_tot = settings->width * settings->height;
     const mp_bitcnt_t prec = imgdata->prec;
     for (int i = 0; i < num_tot; ++i) {
@@ -467,7 +472,7 @@ _imageData_set_prec_data(_imageData *imgdata)
 }
 
 static void
-_imageData_set_prec_tbuf(_imageData *imgdata)
+_imageData_set_prec_tbuf(ImageData *imgdata)
 {
     const mp_bitcnt_t prec = imgdata->prec;
     const int tnum = imgdata->tnum;
@@ -478,7 +483,7 @@ _imageData_set_prec_tbuf(_imageData *imgdata)
 }
 
 static void
-_imageData_set_prec(_imageData *imgdata, mp_bitcnt_t prec)
+_imageData_set_prec(ImageData *imgdata, mp_bitcnt_t prec)
 {
     imgdata->prec = prec;
     _imageData_set_prec_mpf(imgdata);
@@ -491,7 +496,7 @@ _imageData_set_prec(_imageData *imgdata, mp_bitcnt_t prec)
 
 static void
 _pixelChunk_update_pixel(
-  _pixelChunk *chunk, const _imageData *imgdata, int idx_px_re, int idx_px_im
+  _pixelChunk *chunk, const ImageData *imgdata, int idx_px_re, int idx_px_im
 )
 {
     const _chunkData *const chunks = &imgdata->chunks;
@@ -506,7 +511,7 @@ _pixelChunk_update_pixel(
     }
 
     _pixelDataBuffer *const tbuf = imgdata->tbuf;
-    const Settings *const settings = &imgdata->settings;
+    const Settings *const settings = imgdata->settings;
 
     const View *const view = imgdata->view;
     const mpf_srcptr cntr_re = view->cntr_re;
@@ -537,7 +542,7 @@ _pixelChunk_update_pixel(
 }
 
 static void
-_pixelChunk_update(_pixelChunk *chunk, const _imageData *imgdata)
+_pixelChunk_update(_pixelChunk *chunk, const ImageData *imgdata)
 {
     if (chunk->state == CHUNK_STATE_VALID) {
         return;
@@ -561,7 +566,7 @@ _pixelChunk_update(_pixelChunk *chunk, const _imageData *imgdata)
 }
 
 static void
-_pixelChunk_invalidate_all(_pixelChunk *chunk, const _imageData *imgdata)
+_pixelChunk_invalidate_all(_pixelChunk *chunk, const ImageData *imgdata)
 {
     const _chunkData *const chunks = &imgdata->chunks;
     const _chunkParams *const params = &chunks->params;
@@ -583,12 +588,12 @@ _pixelChunk_invalidate_all(_pixelChunk *chunk, const _imageData *imgdata)
 
 typedef void
 _pixelChunk_callback(
-  _pixelChunk *chunk, const _imageData *imgdata, const void *vparams
+  _pixelChunk *chunk, const ImageData *imgdata, const void *vparams
 );
 
 static void
 _imageData_apply_to_all_chunks(
-  _imageData *imgdata, _pixelChunk_callback *callback, const void *vparams
+  ImageData *imgdata, _pixelChunk_callback *callback, const void *vparams
 )
 {
     _chunkData *const chunks = &imgdata->chunks;
@@ -602,7 +607,7 @@ _imageData_apply_to_all_chunks(
 
 static void
 _pixelChunk_callback_update(
-  _pixelChunk *chunk, const _imageData *imgdata, const void *vparams
+  _pixelChunk *chunk, const ImageData *imgdata, const void *vparams
 )
 {
     (void) vparams;
@@ -623,7 +628,7 @@ _pixelChunk_shift_im(_pixelChunk *chunk, const _chunkData *chunks, int shift)
 
 static void
 _pixelChunk_callback_shift(
-  _pixelChunk *chunk, const _imageData *imgdata, const void *vparams
+  _pixelChunk *chunk, const ImageData *imgdata, const void *vparams
 )
 {
     const _chunkData *const chunks = &imgdata->chunks;
@@ -650,7 +655,7 @@ _pixelChunk_zoom(_pixelChunk *chunk, const _chunkData *chunks, int stages)
 
 static void
 _pixelChunk_callback_zoom(
-  _pixelChunk *chunk, const _imageData *imgdata, const void *vparams
+  _pixelChunk *chunk, const ImageData *imgdata, const void *vparams
 )
 {
     const _chunkData *const chunks = &imgdata->chunks;
@@ -682,9 +687,9 @@ _calculate_new_prec(mpf_srcptr upp)
 }
 
 static void
-_imageData_register_zoom(_imageData *imgdata, int stages)
+_imageData_register_zoom(ImageData *imgdata, int stages)
 {
-    const Settings *const settings = &imgdata->settings;
+    const Settings *const settings = imgdata->settings;
     const mpf_ptr buf = imgdata->action_buf;
 
     View *const view = imgdata->view;
@@ -705,9 +710,9 @@ _imageData_register_zoom(_imageData *imgdata, int stages)
 }
 
 static void
-_imageData_register_shift(_imageData *imgdata, int shift_re, int shift_im)
+_imageData_register_shift(ImageData *imgdata, int shift_re, int shift_im)
 {
-    const Settings *const settings = &imgdata->settings;
+    const Settings *const settings = imgdata->settings;
     const mpf_ptr buf = imgdata->action_buf;
 
     View *const view = imgdata->view;
@@ -738,7 +743,7 @@ _imageData_register_shift(_imageData *imgdata, int shift_re, int shift_im)
 
 static void
 _pixelChunk_callback_reset(
-  _pixelChunk *chunk, const _imageData *imgdata, const void *vparams
+  _pixelChunk *chunk, const ImageData *imgdata, const void *vparams
 )
 {
     (void) vparams;
@@ -746,7 +751,7 @@ _pixelChunk_callback_reset(
 }
 
 static void
-_imageData_register_reset(_imageData *imgdata)
+_imageData_register_reset(ImageData *imgdata)
 {
     _imageData_init_view(imgdata);
     _pixelChunk_callback *const callback = &_pixelChunk_callback_reset;
@@ -754,17 +759,25 @@ _imageData_register_reset(_imageData *imgdata)
 }
 
 static void
-_imageData_register_view_save(_imageData *imgdata)
+_imageData_register_view_save(ImageData *imgdata)
 {
-    const View *const view = imgdata->view;
-    JsonUtil_write(view, DEFAULT_VIEW_SAVE_FILE, &View_to_Json_void);
+    View *const view = imgdata->view;
+    const char *const path = App_get_env_path();
+    char *const fname = imgdata->view_fname;
+    snprintf(fname, FILENAME_BUFFER_SIZE, "%s/%s", path, VIEW_SAVE_FILE);
+
+    JsonUtil_write(view, fname, &View_to_Json_void);
 }
 
 static void
-_imageData_register_view_load(_imageData *imgdata)
+_imageData_register_view_load(ImageData *imgdata)
 {
     View *const view = imgdata->view;
-    JsonUtil_read(view, DEFAULT_VIEW_SAVE_FILE, &View_fill_from_Json_void);
+    const char *const path = App_get_env_path();
+    char *const fname = imgdata->view_fname;
+    snprintf(fname, FILENAME_BUFFER_SIZE, "%s/%s", path, VIEW_SAVE_FILE);
+
+    JsonUtil_read(view, fname, &View_fill_from_Json_void);
     _pixelChunk_callback *const callback = &_pixelChunk_callback_reset;
     _imageData_apply_to_all_chunks(imgdata, callback, NULL);
 }
@@ -773,7 +786,7 @@ _imageData_register_view_load(_imageData *imgdata)
  * Updates all pixels in framebuffer of `imgdata`.
  */
 static void
-_imageData_update_framebuffer(_imageData *imgdata)
+_imageData_update_framebuffer(ImageData *imgdata)
 {
     const _chunkData *const chunks = &imgdata->chunks;
     const int num_chnks_re = chunks->num_re;
@@ -803,7 +816,7 @@ _imageData_update_framebuffer(_imageData *imgdata)
 }
 
 static void
-_imageData_update_pixels(_imageData *imgdata)
+_imageData_update_pixels(ImageData *imgdata)
 {
     _pixelChunk_callback *const callback = &_pixelChunk_callback_update;
     _imageData_apply_to_all_chunks(imgdata, callback, NULL);
@@ -811,7 +824,7 @@ _imageData_update_pixels(_imageData *imgdata)
 }
 
 static bool
-_imageData_is_complete(_imageData *imgdata)
+_imageData_is_complete(ImageData *imgdata)
 {
     _chunkData *const chunks = &imgdata->chunks;
     const int num_tot = chunks->num_re * chunks->num_im;
@@ -826,16 +839,16 @@ _imageData_is_complete(_imageData *imgdata)
 
 /* -------------------------------------------------------------------------- */
 
-static _imageData *
+static ImageData *
 _imageData_create(const Settings *settings)
 {
-    _imageData *const imgdata = _imageData_alloc(settings);
+    ImageData *const imgdata = _imageData_alloc(settings);
     _imageData_update_pixels(imgdata);
     return imgdata;
 }
 
 static void
-_imageData_free(_imageData *imgdata)
+_imageData_free(ImageData *imgdata)
 {
     if (imgdata == NULL) {
         return;
@@ -845,7 +858,7 @@ _imageData_free(_imageData *imgdata)
 }
 
 static void
-_imageData_register_action(_imageData *imgdata, enum Key key)
+_imageData_register_action(ImageData *imgdata, enum Key key)
 {
     static const int ZOOM_STAGES = 1;
     static const int SHIFT_STAGES = 2;
@@ -887,7 +900,7 @@ _imageData_register_action(_imageData *imgdata, enum Key key)
 }
 
 static int
-_imageData_perform_action(_imageData *imgdata, unsigned int mseconds)
+_imageData_perform_action(ImageData *imgdata, unsigned int mseconds)
 {
     if (imgdata->state == DATA_STATE_IDLE) {
         msleep(mseconds);
@@ -903,42 +916,37 @@ _imageData_perform_action(_imageData *imgdata, unsigned int mseconds)
 
 /* -------------------------------------------------------------------------- */
 
-/**
- * Global ImageData object
- */
-static _imageData *_imgdata = NULL;
-
-void
-ImageData_init(void)
+ImageData *
+ImageData_app_init(void)
 {
-    if (_imgdata != NULL) {
-        return;
+    ImageData *const imgdata = App_get_image_data();
+    if (imgdata != NULL) {
+        return imgdata;
     }
-    const Settings *const settings = Settings_get_global();
-    _imgdata = _imageData_create(settings);
+    const Settings *const settings = App_get_settings();
+    return _imageData_create(settings);
 }
 
 void
-ImageData_free(void)
+ImageData_free(ImageData *imgdata)
 {
-    _imageData_free(_imgdata);
-    _imgdata = NULL;
+    _imageData_free(imgdata);
 }
 
 void
-ImageData_register_action(enum Key key)
+ImageData_register_action(ImageData *imgdata, enum Key key)
 {
-    _imageData_register_action(_imgdata, key);
+    _imageData_register_action(imgdata, key);
 }
 
 int
-ImageData_perform_action(unsigned int mseconds)
+ImageData_perform_action(ImageData *imgdata, unsigned int mseconds)
 {
-    return _imageData_perform_action(_imgdata, mseconds);
+    return _imageData_perform_action(imgdata, mseconds);
 }
 
 const float *
-ImageData_get_pixel_data(void)
+ImageData_get_pixel_data(const ImageData *imgdata)
 {
-    return _imgdata->framebuf;
+    return imgdata->framebuf;
 }
