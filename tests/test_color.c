@@ -1,44 +1,11 @@
-#include <inttypes.h>
-#include <stdio.h>
+#include <unity/unity.h>
 
 #include "../src/color.c"
 
-static int pass_ctr = 0;
-static int fail_ctr = 0;
-
-static int
-_assert_equals_u32(uint32_t lhs, uint32_t rhs, const char *func, int line)
-{
-    if (lhs != rhs) {
-        fprintf(
-          stderr,
-          "Test failed at line %i in function \"%s\": "
-          "Expected %#010x, got %#010x\n",
-          line, func, lhs, rhs
-        );
-        ++fail_ctr;
-        return -1;
-    }
-    ++pass_ctr;
-    return 0;
-}
-
-static inline int
-_assert_equals_rgb(_argb lhs, _argb rhs, const char *func, int line)
-{
-    return _assert_equals_u32(_rgb2u32(lhs), _rgb2u32(rhs), func, line);
-}
-
-static inline int
-_assert_equals_hsv(_ahsv lhs, _ahsv rhs, const char *func, int line)
-{
-    return _assert_equals_u32(_hsv2u32(lhs), _hsv2u32(rhs), func, line);
-}
-
 #define ASSERT_EQUALS_RGB(LHS, RHS)                                            \
-    _assert_equals_rgb((LHS), (RHS), __func__, __LINE__)
+    TEST_ASSERT_EQUAL_UINT32(_rgb2u32(LHS), _rgb2u32(RHS))
 #define ASSERT_EQUALS_HSV(LHS, RHS)                                            \
-    _assert_equals_hsv((LHS), (RHS), __func__, __LINE__)
+    TEST_ASSERT_EQUAL_UINT32(_hsv2u32(LHS), _hsv2u32(RHS))
 
 static void
 _test_rgb2hsv(void)
@@ -214,14 +181,19 @@ _test_hsv2rgb(void)
     ASSERT_EQUALS_RGB(teal_rgb, teal_rgb_conv);
 }
 
+void
+setUp(void)
+{}
+
+void
+tearDown(void)
+{}
+
 int
 main(int argc, char **argv)
 {
-    _test_rgb2hsv();
-    _test_hsv2rgb();
-
-    printf(
-      "%s: %i Tests run: %i Tests passed, %i Tests failed\n", argv[0],
-      pass_ctr + fail_ctr, pass_ctr, fail_ctr
-    );
+    UNITY_BEGIN();
+    RUN_TEST(_test_rgb2hsv);
+    RUN_TEST(_test_hsv2rgb);
+    return UNITY_END();
 }
