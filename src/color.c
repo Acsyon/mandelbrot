@@ -195,6 +195,7 @@ Palette_exp_hsv(float pos)
         return 0x000D152D;
     }
     (void) &_rgb2hsv;
+    (void) &_u322rgb;
     const _ahsv hsv = {
       .h = (((uint16_t) powf(pos * 360, 1.5F)) % 360),
       .s = 1.0F,

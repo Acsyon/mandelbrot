@@ -1,6 +1,6 @@
-#include <unity/unity.h>
+#include "color.c"
 
-#include "../src/color.c"
+#include "unity.h"
 
 #define ASSERT_EQUALS_RGB(LHS, RHS)                                            \
     TEST_ASSERT_EQUAL_UINT32(_rgb2u32(LHS), _rgb2u32(RHS))
@@ -190,7 +190,7 @@ tearDown(void)
 {}
 
 int
-main(int argc, char **argv)
+main(void)
 {
     UNITY_BEGIN();
     RUN_TEST(_test_rgb2hsv);
