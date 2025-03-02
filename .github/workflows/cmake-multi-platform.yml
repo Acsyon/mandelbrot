@@ -34,10 +34,16 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Install clang
+      if: matrix.c_compiler == 'clang'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang libomp-dev
+
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libsdl2-dev libgmp-dev clang libomp-dev libcjson-dev cmake
+        sudo apt-get install -y libsdl2-dev libgmp-dev libcjson-dev cmake
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
