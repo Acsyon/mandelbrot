@@ -35,18 +35,18 @@ This project relies on the following external libraries:
 
 ### Prerequisites
 
-Ensure you have the required libraries installed on your system (OpenMP comes automatically with GCC, but is required for LLVM):
+Ensure you have the required libraries and build systems installed on your system (OpenMP comes automatically with GCC but is required for Clang):
 
 #### Arch-based systems:
 
 ```
-sudo pacman -S sdl2-compat gmp openmp cjson
+sudo pacman -S sdl2-compat gmp cjson [clang openmp] [cmake]
 ```
 
 #### Debian-based systems:
 
 ```
-sudo apt-get install libsdl2-dev libgmp-dev libomp-dev libcjson-dev
+sudo apt install libsdl2-dev libgmp-dev libcjson-dev [clang libomp-dev] [cmake]
 ```
 
 #### MacOS:
@@ -63,7 +63,7 @@ This project uses CMake for building. Run the following commands:
 
 ```
 cd build
-cmake ..
+cmake [-DCMAKE_BUILD_TYPE=Release] ..
 make
 ```
 
@@ -94,6 +94,8 @@ cd bin
 | `--num_chnks_im NUM` | Set number of chunks in imaginary direction (default: 20) |
 | `--zoom_fac FAC` | Set factor for one zoom stage (default: 0.5) |
 | `--fps FPS` | Sets frames per second for intermediary updates (default: 30) |
+| `--palette_idx IDX` | Set start index for colour palette (default: 4) |
+| `--trip_mode MODE` | Sets "trip mode" type (default: 0) |
 
 Command-line arguments take precedence over the JSON configuration.
 
@@ -112,7 +114,9 @@ The JSON field names are identical to their corresponding command-line options:
   "max_re": 1,
   "min_re": -2,
   "cntr_im": 0,
-  "fps": 30
+  "fps": 30,
+  "palette_idx": 4,
+  "trip_mode": 0
 }
 ```
 
@@ -125,6 +129,8 @@ The JSON field names are identical to their corresponding command-line options:
 | `F5` | Save current view |
 | `F9` | Load saved view |
 | `ESC` / `q` | Exit program |
+| `c` | Cycle colour palette |
+| `t` | Enable "trip mode" (hold key) |
 
 ## License
 

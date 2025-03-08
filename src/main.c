@@ -20,6 +20,8 @@ enum {
     NUM_CHNKS_IM_IDX,
     ZOOM_FAC_IDX,
     FPS_IDX,
+    PALETTE_IDX_IDX,
+    TRIP_MODE_IDX,
     LONGOPTS_ONLY_END_IDX,
 };
 
@@ -38,6 +40,8 @@ static const struct option LONGOPTS[] = {
   {"num_chnks_im", REQUIRED_ARGUMENT, NULL, NUM_CHNKS_IM_IDX},
   {"zoom_fac", REQUIRED_ARGUMENT, NULL, ZOOM_FAC_IDX},
   {"fps", REQUIRED_ARGUMENT, NULL, FPS_IDX},
+  {"palette_idx", REQUIRED_ARGUMENT, NULL, PALETTE_IDX_IDX},
+  {"trip_mode", REQUIRED_ARGUMENT, NULL, TRIP_MODE_IDX},
   {0, 0, 0, 0},
 };
 
@@ -55,7 +59,8 @@ static const char *const USAGE
     "The following two options are relative to \"-e\" and have no effect "
     "when \"-e\" is not set:\n"
     "  -l, --load      Sets name of file to load settings from, defaults to "
-    "\"settings.json\"\n"
+    "\"" DEFAULT_SETTINGS_FILENAME
+    "\"\n"
     "  -s, --save      Sets name of file to save settings to\n"
     "\n"
     "Settings:\n"
@@ -68,7 +73,9 @@ static const char *const USAGE
     "      --num_chnks_re  Sets number of chunks in real direction\n"
     "      --num_chnks_im  Sets number of chunks in imaginary direction\n"
     "      --zoom_fac      Sets factor for one zoom stage\n"
-    "      --fps           Sets frames per second (for intermediary updates)\n";
+    "      --fps           Sets frames per second (for intermediary updates)\n"
+    "      --palette_idx   Sets start index for colour palette\n"
+    "      --trip_mode     Sets \"trip mode\" type\n";
 
 /**
  * Auxiliary struct for environment strings (path and file names)
@@ -193,8 +200,14 @@ _get_settings(const struct _env *env, int argc, char **argv)
         case ZOOM_FAC_IDX: /* zoom_fac */
             settings->zoom_fac = atof(optarg);
             break;
-        case FPS_IDX: /* fps*/
+        case FPS_IDX: /* fps */
             settings->fps = atoi(optarg);
+            break;
+        case PALETTE_IDX_IDX: /* palette_idx */
+            settings->palette_idx = atoi(optarg);
+            break;
+        case TRIP_MODE_IDX: /* trip_mode */
+            settings->trip_mode = atoi(optarg);
             break;
         default: /* anything else has been handled before */
             break;

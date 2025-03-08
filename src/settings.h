@@ -25,6 +25,8 @@ typedef struct {
     int num_chnks_im;  /* Number of chunks in imaginary direction */
     double zoom_fac;   /* Factor for one zoom stage */
     uint16_t fps;      /* Frames per second (for intermediary updates) */
+    int palette_idx;   /* Default index of colour palette*/
+    int trip_mode;     /* Type of trip mode */
 } Settings;
 
 /**

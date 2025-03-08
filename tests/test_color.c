@@ -1,76 +1,76 @@
-#include "color.c"
-
 #include "unity.h"
 
+#include "color.h"
+
 #define ASSERT_EQUALS_RGB(LHS, RHS)                                            \
-    TEST_ASSERT_EQUAL_UINT32(_rgb2u32(LHS), _rgb2u32(RHS))
+    TEST_ASSERT_EQUAL_UINT32(ARGB_to_u32(LHS), ARGB_to_u32(RHS))
 #define ASSERT_EQUALS_HSV(LHS, RHS)                                            \
-    TEST_ASSERT_EQUAL_UINT32(_hsv2u32(LHS), _hsv2u32(RHS))
+    TEST_ASSERT_EQUAL_UINT32(AHSV_to_u32(LHS), AHSV_to_u32(RHS))
 
 static void
-_test_rgb2hsv(void)
+_test_ARGB_to_AHSV(void)
 {
     /* Arrange */
-    const _argb black_rgb = _float2rgb(0.0f, 0.0f, 0.0f);
-    const _argb white_rgb = _float2rgb(1.0f, 1.0f, 1.0f);
-    const _argb gray_rgb = _float2rgb(0.5f, 0.5f, 0.5f);
+    const struct ARGB black_rgb = float_to_ARGB(0.0f, 0.0f, 0.0f);
+    const struct ARGB white_rgb = float_to_ARGB(1.0f, 1.0f, 1.0f);
+    const struct ARGB gray_rgb = float_to_ARGB(0.5f, 0.5f, 0.5f);
 
-    const _argb red_rgb = _float2rgb(1.0f, 0.0f, 0.0f);
-    const _argb lime_rgb = _float2rgb(0.0f, 1.0f, 0.0f);
-    const _argb blue_rgb = _float2rgb(0.0f, 0.0f, 1.0f);
+    const struct ARGB red_rgb = float_to_ARGB(1.0f, 0.0f, 0.0f);
+    const struct ARGB lime_rgb = float_to_ARGB(0.0f, 1.0f, 0.0f);
+    const struct ARGB blue_rgb = float_to_ARGB(0.0f, 0.0f, 1.0f);
 
-    const _argb yellow_rgb = _float2rgb(1.0f, 1.0f, 0.0f);
-    const _argb cyan_rgb = _float2rgb(0.0f, 1.0f, 1.0f);
-    const _argb magenta_rgb = _float2rgb(1.0f, 0.0f, 1.0f);
+    const struct ARGB yellow_rgb = float_to_ARGB(1.0f, 1.0f, 0.0f);
+    const struct ARGB cyan_rgb = float_to_ARGB(0.0f, 1.0f, 1.0f);
+    const struct ARGB magenta_rgb = float_to_ARGB(1.0f, 0.0f, 1.0f);
 
-    const _argb maroon_rgb = _float2rgb(0.5f, 0.0f, 0.0f);
-    const _argb darkgreen_rgb = _float2rgb(0.0f, 0.5f, 0.0f);
-    const _argb navy_rgb = _float2rgb(0.0f, 0.0f, 0.5f);
+    const struct ARGB maroon_rgb = float_to_ARGB(0.5f, 0.0f, 0.0f);
+    const struct ARGB darkgreen_rgb = float_to_ARGB(0.0f, 0.5f, 0.0f);
+    const struct ARGB navy_rgb = float_to_ARGB(0.0f, 0.0f, 0.5f);
 
-    const _argb olive_rgb = _float2rgb(0.5f, 0.5f, 0.0f);
-    const _argb purple_rgb = _float2rgb(0.5f, 0.0f, 0.5f);
-    const _argb teal_rgb = _float2rgb(0.0f, 0.5f, 0.5f);
+    const struct ARGB olive_rgb = float_to_ARGB(0.5f, 0.5f, 0.0f);
+    const struct ARGB purple_rgb = float_to_ARGB(0.5f, 0.0f, 0.5f);
+    const struct ARGB teal_rgb = float_to_ARGB(0.0f, 0.5f, 0.5f);
 
-    const _ahsv black_hsv = _float2hsv(0.0f, 0.0f, 0.0f);
-    const _ahsv white_hsv = _float2hsv(0.0f, 0.0f, 1.0f);
-    const _ahsv gray_hsv = _float2hsv(0.0f, 0.0f, 0.5f);
+    const struct AHSV black_hsv = float_to_AHSV(0.0f, 0.0f, 0.0f);
+    const struct AHSV white_hsv = float_to_AHSV(0.0f, 0.0f, 1.0f);
+    const struct AHSV gray_hsv = float_to_AHSV(0.0f, 0.0f, 0.5f);
 
-    const _ahsv red_hsv = _float2hsv(000.0f / 360, 1.0f, 1.0f);
-    const _ahsv lime_hsv = _float2hsv(120.0f / 360, 1.0f, 1.0f);
-    const _ahsv blue_hsv = _float2hsv(240.0f / 360, 1.0f, 1.0f);
+    const struct AHSV red_hsv = float_to_AHSV(000.0f / 360, 1.0f, 1.0f);
+    const struct AHSV lime_hsv = float_to_AHSV(120.0f / 360, 1.0f, 1.0f);
+    const struct AHSV blue_hsv = float_to_AHSV(240.0f / 360, 1.0f, 1.0f);
 
-    const _ahsv yellow_hsv = _float2hsv(060.0f / 360, 1.0f, 1.0f);
-    const _ahsv cyan_hsv = _float2hsv(180.0f / 360, 1.0f, 1.0f);
-    const _ahsv magenta_hsv = _float2hsv(300.0f / 360, 1.0f, 1.0f);
+    const struct AHSV yellow_hsv = float_to_AHSV(060.0f / 360, 1.0f, 1.0f);
+    const struct AHSV cyan_hsv = float_to_AHSV(180.0f / 360, 1.0f, 1.0f);
+    const struct AHSV magenta_hsv = float_to_AHSV(300.0f / 360, 1.0f, 1.0f);
 
-    const _ahsv maroon_hsv = _float2hsv(000.0f / 360, 1.0f, 0.5f);
-    const _ahsv darkgreen_hsv = _float2hsv(120.0f / 360, 1.0f, 0.5f);
-    const _ahsv navy_hsv = _float2hsv(240.0f / 360, 1.0f, 0.5f);
+    const struct AHSV maroon_hsv = float_to_AHSV(000.0f / 360, 1.0f, 0.5f);
+    const struct AHSV darkgreen_hsv = float_to_AHSV(120.0f / 360, 1.0f, 0.5f);
+    const struct AHSV navy_hsv = float_to_AHSV(240.0f / 360, 1.0f, 0.5f);
 
-    const _ahsv olive_hsv = _float2hsv(060.0f / 360, 1.0f, 0.5f);
-    const _ahsv purple_hsv = _float2hsv(300.0f / 360, 1.0f, 0.5f);
-    const _ahsv teal_hsv = _float2hsv(180.0f / 360, 1.0f, 0.5f);
+    const struct AHSV olive_hsv = float_to_AHSV(060.0f / 360, 1.0f, 0.5f);
+    const struct AHSV purple_hsv = float_to_AHSV(300.0f / 360, 1.0f, 0.5f);
+    const struct AHSV teal_hsv = float_to_AHSV(180.0f / 360, 1.0f, 0.5f);
 
     /* Act */
-    const _ahsv black_hsv_conv = _rgb2hsv(black_rgb);
-    const _ahsv white_hsv_conv = _rgb2hsv(white_rgb);
-    const _ahsv gray_hsv_conv = _rgb2hsv(gray_rgb);
+    const struct AHSV black_hsv_conv = ARGB_to_AHSV(black_rgb);
+    const struct AHSV white_hsv_conv = ARGB_to_AHSV(white_rgb);
+    const struct AHSV gray_hsv_conv = ARGB_to_AHSV(gray_rgb);
 
-    const _ahsv red_hsv_conv = _rgb2hsv(red_rgb);
-    const _ahsv lime_hsv_conv = _rgb2hsv(lime_rgb);
-    const _ahsv blue_hsv_conv = _rgb2hsv(blue_rgb);
+    const struct AHSV red_hsv_conv = ARGB_to_AHSV(red_rgb);
+    const struct AHSV lime_hsv_conv = ARGB_to_AHSV(lime_rgb);
+    const struct AHSV blue_hsv_conv = ARGB_to_AHSV(blue_rgb);
 
-    const _ahsv yellow_hsv_conv = _rgb2hsv(yellow_rgb);
-    const _ahsv cyan_hsv_conv = _rgb2hsv(cyan_rgb);
-    const _ahsv magenta_hsv_conv = _rgb2hsv(magenta_rgb);
+    const struct AHSV yellow_hsv_conv = ARGB_to_AHSV(yellow_rgb);
+    const struct AHSV cyan_hsv_conv = ARGB_to_AHSV(cyan_rgb);
+    const struct AHSV magenta_hsv_conv = ARGB_to_AHSV(magenta_rgb);
 
-    const _ahsv maroon_hsv_conv = _rgb2hsv(maroon_rgb);
-    const _ahsv darkgreen_hsv_conv = _rgb2hsv(darkgreen_rgb);
-    const _ahsv navy_hsv_conv = _rgb2hsv(navy_rgb);
+    const struct AHSV maroon_hsv_conv = ARGB_to_AHSV(maroon_rgb);
+    const struct AHSV darkgreen_hsv_conv = ARGB_to_AHSV(darkgreen_rgb);
+    const struct AHSV navy_hsv_conv = ARGB_to_AHSV(navy_rgb);
 
-    const _ahsv olive_hsv_conv = _rgb2hsv(olive_rgb);
-    const _ahsv purple_hsv_conv = _rgb2hsv(purple_rgb);
-    const _ahsv teal_hsv_conv = _rgb2hsv(teal_rgb);
+    const struct AHSV olive_hsv_conv = ARGB_to_AHSV(olive_rgb);
+    const struct AHSV purple_hsv_conv = ARGB_to_AHSV(purple_rgb);
+    const struct AHSV teal_hsv_conv = ARGB_to_AHSV(teal_rgb);
 
     /* Assert */
     ASSERT_EQUALS_HSV(black_hsv, black_hsv_conv);
@@ -95,69 +95,69 @@ _test_rgb2hsv(void)
 }
 
 static void
-_test_hsv2rgb(void)
+_test_AHSV_to_ARGB(void)
 {
     /* Arrange */
-    const _argb black_rgb = _float2rgb(0.0f, 0.0f, 0.0f);
-    const _argb white_rgb = _float2rgb(1.0f, 1.0f, 1.0f);
-    const _argb gray_rgb = _float2rgb(0.5f, 0.5f, 0.5f);
+    const struct ARGB black_rgb = float_to_ARGB(0.0f, 0.0f, 0.0f);
+    const struct ARGB white_rgb = float_to_ARGB(1.0f, 1.0f, 1.0f);
+    const struct ARGB gray_rgb = float_to_ARGB(0.5f, 0.5f, 0.5f);
 
-    const _argb red_rgb = _float2rgb(1.0f, 0.0f, 0.0f);
-    const _argb lime_rgb = _float2rgb(0.0f, 1.0f, 0.0f);
-    const _argb blue_rgb = _float2rgb(0.0f, 0.0f, 1.0f);
+    const struct ARGB red_rgb = float_to_ARGB(1.0f, 0.0f, 0.0f);
+    const struct ARGB lime_rgb = float_to_ARGB(0.0f, 1.0f, 0.0f);
+    const struct ARGB blue_rgb = float_to_ARGB(0.0f, 0.0f, 1.0f);
 
-    const _argb yellow_rgb = _float2rgb(1.0f, 1.0f, 0.0f);
-    const _argb cyan_rgb = _float2rgb(0.0f, 1.0f, 1.0f);
-    const _argb magenta_rgb = _float2rgb(1.0f, 0.0f, 1.0f);
+    const struct ARGB yellow_rgb = float_to_ARGB(1.0f, 1.0f, 0.0f);
+    const struct ARGB cyan_rgb = float_to_ARGB(0.0f, 1.0f, 1.0f);
+    const struct ARGB magenta_rgb = float_to_ARGB(1.0f, 0.0f, 1.0f);
 
-    const _argb maroon_rgb = _float2rgb(0.5f, 0.0f, 0.0f);
-    const _argb darkgreen_rgb = _float2rgb(0.0f, 0.5f, 0.0f);
-    const _argb navy_rgb = _float2rgb(0.0f, 0.0f, 0.5f);
+    const struct ARGB maroon_rgb = float_to_ARGB(0.5f, 0.0f, 0.0f);
+    const struct ARGB darkgreen_rgb = float_to_ARGB(0.0f, 0.5f, 0.0f);
+    const struct ARGB navy_rgb = float_to_ARGB(0.0f, 0.0f, 0.5f);
 
-    const _argb olive_rgb = _float2rgb(0.5f, 0.5f, 0.0f);
-    const _argb purple_rgb = _float2rgb(0.5f, 0.0f, 0.5f);
-    const _argb teal_rgb = _float2rgb(0.0f, 0.5f, 0.5f);
+    const struct ARGB olive_rgb = float_to_ARGB(0.5f, 0.5f, 0.0f);
+    const struct ARGB purple_rgb = float_to_ARGB(0.5f, 0.0f, 0.5f);
+    const struct ARGB teal_rgb = float_to_ARGB(0.0f, 0.5f, 0.5f);
 
-    const _ahsv black_hsv = _float2hsv(0.0f, 0.0f, 0.0f);
-    const _ahsv white_hsv = _float2hsv(0.0f, 0.0f, 1.0f);
-    const _ahsv gray_hsv = _float2hsv(0.0f, 0.0f, 0.5f);
+    const struct AHSV black_hsv = float_to_AHSV(0.0f, 0.0f, 0.0f);
+    const struct AHSV white_hsv = float_to_AHSV(0.0f, 0.0f, 1.0f);
+    const struct AHSV gray_hsv = float_to_AHSV(0.0f, 0.0f, 0.5f);
 
-    const _ahsv red_hsv = _float2hsv(000.0f / 360, 1.0f, 1.0f);
-    const _ahsv lime_hsv = _float2hsv(120.0f / 360, 1.0f, 1.0f);
-    const _ahsv blue_hsv = _float2hsv(240.0f / 360, 1.0f, 1.0f);
+    const struct AHSV red_hsv = float_to_AHSV(000.0f / 360, 1.0f, 1.0f);
+    const struct AHSV lime_hsv = float_to_AHSV(120.0f / 360, 1.0f, 1.0f);
+    const struct AHSV blue_hsv = float_to_AHSV(240.0f / 360, 1.0f, 1.0f);
 
-    const _ahsv yellow_hsv = _float2hsv(060.0f / 360, 1.0f, 1.0f);
-    const _ahsv cyan_hsv = _float2hsv(180.0f / 360, 1.0f, 1.0f);
-    const _ahsv magenta_hsv = _float2hsv(300.0f / 360, 1.0f, 1.0f);
+    const struct AHSV yellow_hsv = float_to_AHSV(060.0f / 360, 1.0f, 1.0f);
+    const struct AHSV cyan_hsv = float_to_AHSV(180.0f / 360, 1.0f, 1.0f);
+    const struct AHSV magenta_hsv = float_to_AHSV(300.0f / 360, 1.0f, 1.0f);
 
-    const _ahsv maroon_hsv = _float2hsv(000.0f / 360, 1.0f, 0.5f);
-    const _ahsv darkgreen_hsv = _float2hsv(120.0f / 360, 1.0f, 0.5f);
-    const _ahsv navy_hsv = _float2hsv(240.0f / 360, 1.0f, 0.5f);
+    const struct AHSV maroon_hsv = float_to_AHSV(000.0f / 360, 1.0f, 0.5f);
+    const struct AHSV darkgreen_hsv = float_to_AHSV(120.0f / 360, 1.0f, 0.5f);
+    const struct AHSV navy_hsv = float_to_AHSV(240.0f / 360, 1.0f, 0.5f);
 
-    const _ahsv olive_hsv = _float2hsv(060.0f / 360, 1.0f, 0.5f);
-    const _ahsv purple_hsv = _float2hsv(300.0f / 360, 1.0f, 0.5f);
-    const _ahsv teal_hsv = _float2hsv(180.0f / 360, 1.0f, 0.5f);
+    const struct AHSV olive_hsv = float_to_AHSV(060.0f / 360, 1.0f, 0.5f);
+    const struct AHSV purple_hsv = float_to_AHSV(300.0f / 360, 1.0f, 0.5f);
+    const struct AHSV teal_hsv = float_to_AHSV(180.0f / 360, 1.0f, 0.5f);
 
     /* Act */
-    const _argb black_rgb_conv = _hsv2rgb(black_hsv);
-    const _argb white_rgb_conv = _hsv2rgb(white_hsv);
-    const _argb gray_rgb_conv = _hsv2rgb(gray_hsv);
+    const struct ARGB black_rgb_conv = AHSV_to_ARGB(black_hsv);
+    const struct ARGB white_rgb_conv = AHSV_to_ARGB(white_hsv);
+    const struct ARGB gray_rgb_conv = AHSV_to_ARGB(gray_hsv);
 
-    const _argb red_rgb_conv = _hsv2rgb(red_hsv);
-    const _argb lime_rgb_conv = _hsv2rgb(lime_hsv);
-    const _argb blue_rgb_conv = _hsv2rgb(blue_hsv);
+    const struct ARGB red_rgb_conv = AHSV_to_ARGB(red_hsv);
+    const struct ARGB lime_rgb_conv = AHSV_to_ARGB(lime_hsv);
+    const struct ARGB blue_rgb_conv = AHSV_to_ARGB(blue_hsv);
 
-    const _argb yellow_rgb_conv = _hsv2rgb(yellow_hsv);
-    const _argb cyan_rgb_conv = _hsv2rgb(cyan_hsv);
-    const _argb magenta_rgb_conv = _hsv2rgb(magenta_hsv);
+    const struct ARGB yellow_rgb_conv = AHSV_to_ARGB(yellow_hsv);
+    const struct ARGB cyan_rgb_conv = AHSV_to_ARGB(cyan_hsv);
+    const struct ARGB magenta_rgb_conv = AHSV_to_ARGB(magenta_hsv);
 
-    const _argb maroon_rgb_conv = _hsv2rgb(maroon_hsv);
-    const _argb darkgreen_rgb_conv = _hsv2rgb(darkgreen_hsv);
-    const _argb navy_rgb_conv = _hsv2rgb(navy_hsv);
+    const struct ARGB maroon_rgb_conv = AHSV_to_ARGB(maroon_hsv);
+    const struct ARGB darkgreen_rgb_conv = AHSV_to_ARGB(darkgreen_hsv);
+    const struct ARGB navy_rgb_conv = AHSV_to_ARGB(navy_hsv);
 
-    const _argb olive_rgb_conv = _hsv2rgb(olive_hsv);
-    const _argb purple_rgb_conv = _hsv2rgb(purple_hsv);
-    const _argb teal_rgb_conv = _hsv2rgb(teal_hsv);
+    const struct ARGB olive_rgb_conv = AHSV_to_ARGB(olive_hsv);
+    const struct ARGB purple_rgb_conv = AHSV_to_ARGB(purple_hsv);
+    const struct ARGB teal_rgb_conv = AHSV_to_ARGB(teal_hsv);
 
     /* Assert */
     ASSERT_EQUALS_RGB(black_rgb, black_rgb_conv);
@@ -193,7 +193,7 @@ int
 main(void)
 {
     UNITY_BEGIN();
-    RUN_TEST(_test_rgb2hsv);
-    RUN_TEST(_test_hsv2rgb);
+    RUN_TEST(_test_ARGB_to_AHSV);
+    RUN_TEST(_test_AHSV_to_ARGB);
     return UNITY_END();
 }

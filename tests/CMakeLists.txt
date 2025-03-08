@@ -19,6 +19,7 @@ include_directories("${unity_SOURCE_DIR}/src")
 link_libraries(unity)
 
 include_directories("${CMAKE_SOURCE_DIR}/src")
+link_libraries(${AUXILIARY_STATIC_LIBRARY})
 
 # Enable testing with CTest
 enable_testing()

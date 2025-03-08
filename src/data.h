@@ -7,21 +7,7 @@
 #ifndef DATA_H_INCLUDED
 #define DATA_H_INCLUDED
 
-/**
- * Enumerator for key inputs
- */
-enum Key {
-    KEY_INVALID = -1,
-    KEY_ZOOM_IN,
-    KEY_ZOOM_OUT,
-    KEY_UP,
-    KEY_DOWN,
-    KEY_LEFT,
-    KEY_RIGHT,
-    KEY_RESET,
-    KEY_VIEW_SAVE,
-    KEY_VIEW_LOAD,
-};
+#include "key.h"
 
 /**
  * Opaque ImageData type

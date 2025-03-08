@@ -17,13 +17,9 @@ if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
 endif()
 if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
     string(APPEND CMAKE_C_FLAGS " -march=native -Wall -Wextra -Wpedantic")
-    string(
-        APPEND
-        CMAKE_C_FLAGS_RELEASE
-        " -DNDEBUG \
+    string(APPEND CMAKE_C_FLAGS_RELEASE " -DNDEBUG \
         -flto=auto \
-        -fno-signed-zeros -fno-math-errno \
-    ")
+        -fno-signed-zeros -fno-math-errno")
     string(APPEND CMAKE_C_FLAGS_DEBUG " -O0 -g -Werror")
     string(APPEND CMAKE_C_FLAGS_RELWITHDEBINFO
            " ${CMAKE_C_FLAGS_RELEASE} -O2 -g")
@@ -59,6 +55,9 @@ if(cJSON_FOUND)
     include_directories(${CJSON_INCLUDE_DIRS})
     link_libraries(${CJSON_LIBRARIES})
 endif()
+
+# Set name of auxiliary static library (for tests)
+set(AUXILIARY_STATIC_LIBRARY "auxlib")
 
 # Add the source directory
 add_subdirectory(src)

@@ -10,7 +10,7 @@
 #include <omp.h>
 
 #include "app.h"
-#include "color.h"
+#include "palette.h"
 #include "settings.h"
 #include "sys.h"
 #include "view.h"
@@ -81,7 +81,7 @@ _pixelData_init(_pixelData *px)
     mpf_init(px->re);
     mpf_init(px->im);
     px->state = PIXEL_STATE_INVALID;
-    px->itrs = INVALID_POS;
+    px->itrs = PALETTE_INVALID_POS;
 }
 
 static void
@@ -579,7 +579,7 @@ _pixelChunk_invalidate_all(_pixelChunk *chunk, const ImageData *imgdata)
             const int idx_px = idx_px_re * stride + idx_px_im;
             _pixelData *const px = &chunk->data[idx_px];
             px->state = PIXEL_STATE_INVALID;
-            px->itrs = INVALID_POS;
+            px->itrs = PALETTE_INVALID_POS;
         }
     }
 

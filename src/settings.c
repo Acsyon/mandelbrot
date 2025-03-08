@@ -20,6 +20,9 @@
 
 #define DEFAULT_FPS UINT8_C(30)
 
+#define DEFAULT_PALETTE_INDEX 4
+#define DEFAULT_TRIP_MODE 0
+
 static const Settings DEFAULT_SETTINGS_OBJECT = {
   .width = DEFAULT_WIDTH,
   .height = DEFAULT_HEIGHT,
@@ -31,6 +34,8 @@ static const Settings DEFAULT_SETTINGS_OBJECT = {
   .num_chnks_im = DEFAULT_NUMBER_CHUNKS_IMAG,
   .zoom_fac = DEFAULT_ZOOM_FACTOR,
   .fps = DEFAULT_FPS,
+  .palette_idx = DEFAULT_PALETTE_INDEX,
+  .trip_mode = DEFAULT_TRIP_MODE,
 };
 
 const Settings *const DEFAULT_SETTINGS = &DEFAULT_SETTINGS_OBJECT;
@@ -102,6 +107,9 @@ Settings_fill_from_Json(Settings *settings, const Json *json)
 
     JSON_TO_MEMBER(uint16_t, fps);
 
+    JSON_TO_MEMBER(int, palette_idx);
+    JSON_TO_MEMBER(int, trip_mode);
+
 #undef JSON_TO_MEMBER
 }
 
@@ -142,6 +150,9 @@ Settings_to_Json(const Settings *settings)
     MEMBER_TO_JSON(double, zoom_fac);
 
     MEMBER_TO_JSON(uint16_t, fps);
+
+    MEMBER_TO_JSON(int, palette_idx);
+    MEMBER_TO_JSON(int, trip_mode);
 
 #undef MEMBER_TO_JSON
 
