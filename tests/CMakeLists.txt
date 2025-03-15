@@ -15,6 +15,7 @@ set(TEST_SOURCES
     app/test_settings.c
     data/test_chunk.c
     data/test_pixel.c
+    net/test_connection.c
     util/test_json.c
     util/test_num.c
     util/test_sys.c
@@ -71,6 +72,8 @@ add_custom_target(
     WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     COMMENT "Running mandelbrot tests"
 )
+
+set_target_properties(test_connection PROPERTIES C_STANDARD 11)
 
 # Fix cutil test binary locations
 if (TARGET cutil-check)

@@ -21,6 +21,7 @@ set(SOURCE_FILES
     data/chunk.c
     data/image.c
     data/pixel.c
+    net/connection.c
     util/json.c
     util/num.c
     util/sys.c
