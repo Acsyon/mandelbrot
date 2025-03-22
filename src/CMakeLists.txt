@@ -6,21 +6,25 @@ if(CMAKE_C_COMPILER_ID STREQUAL "GNU" AND CMAKE_C_COMPILER_VERSION
 endif()
 
 # Set source files
+include_directories(${MANDELBROT_INCLUDE_DIR})
 set(SOURCE_FILES
-    app.c
-    color.c
-    data.c
-    getopt.c
-    json.c
-    num.c
-    palette.c
-    key.c
-    log.c
-    settings.c
-    sys.c
-    util.c
-    video.c
-    view.c)
+    app/app.c
+    app/data.c
+    app/key.c
+    app/settings.c
+    app/video.c
+    data/chunk.c
+    data/image.c
+    data/pixel.c
+    util/getopt.c
+    util/json.c
+    util/log.c
+    util/num.c
+    util/sys.c
+    util/util.c
+    visuals/color.c
+    visuals/palette.c
+    visuals/view.c)
 
 # Set output path for binaries
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)

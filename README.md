@@ -96,6 +96,7 @@ cd bin
 | `--fps FPS` | Sets frames per second for intermediary updates (default: 30) |
 | `--palette_idx IDX` | Set start index for colour palette (default: 4) |
 | `--trip_mode MODE` | Sets "trip mode" type (default: 0) |
+| `--view_file FILE` | Sets file to read view from (default: "view.json") |
 
 Command-line arguments take precedence over the JSON configuration.
 
@@ -117,6 +118,7 @@ The JSON field names are identical to their corresponding command-line options:
   "fps": 30,
   "palette_idx": 4,
   "trip_mode": 0
+  "view_file": "view.json"
 }
 ```
 

@@ -1,10 +1,10 @@
 #include <stdlib.h>
 
-#include "app.h"
-#include "getopt.h"
-#include "log.h"
-#include "settings.h"
-#include "util.h"
+#include <app/app.h>
+#include <app/settings.h>
+#include <util/getopt.h>
+#include <util/log.h>
+#include <util/util.h>
 
 #define DEFAULT_SETTINGS_FILENAME "settings.json"
 
@@ -22,6 +22,7 @@ enum {
     FPS_IDX,
     PALETTE_IDX_IDX,
     TRIP_MODE_IDX,
+    VIEW_FILE_IDX,
     LONGOPTS_ONLY_END_IDX,
 };
 
@@ -42,6 +43,7 @@ static const struct option LONGOPTS[] = {
   {"fps", REQUIRED_ARGUMENT, NULL, FPS_IDX},
   {"palette_idx", REQUIRED_ARGUMENT, NULL, PALETTE_IDX_IDX},
   {"trip_mode", REQUIRED_ARGUMENT, NULL, TRIP_MODE_IDX},
+  {"view_file", REQUIRED_ARGUMENT, NULL, VIEW_FILE_IDX},
   {0, 0, 0, 0},
 };
 
@@ -75,7 +77,9 @@ static const char *const USAGE
     "      --zoom_fac      Sets factor for one zoom stage\n"
     "      --fps           Sets frames per second (for intermediary updates)\n"
     "      --palette_idx   Sets start index for colour palette\n"
-    "      --trip_mode     Sets \"trip mode\" type\n";
+    "      --trip_mode     Sets \"trip mode\" type\n"
+    "      --view_file     Sets name of file to save view to (relative to "
+    "env)\n";
 
 /**
  * Auxiliary struct for environment strings (path and file names)
@@ -208,6 +212,9 @@ _get_settings(const struct _env *env, int argc, char **argv)
             break;
         case TRIP_MODE_IDX: /* trip_mode */
             settings->trip_mode = atoi(optarg);
+            break;
+        case VIEW_FILE_IDX: /* view_file */
+            settings->view_file = Util_strdup(optarg);
             break;
         default: /* anything else has been handled before */
             break;

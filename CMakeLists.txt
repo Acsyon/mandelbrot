@@ -58,9 +58,10 @@ endif()
 
 # Set name of auxiliary static library (for tests)
 set(AUXILIARY_STATIC_LIBRARY "auxlib")
+set(MANDELBROT_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/src")
 
 # Add the source directory
 add_subdirectory(src)
 
 # Add the tests directory
-add_subdirectory(tests)
+include(CTest)
