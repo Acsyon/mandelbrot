@@ -8,57 +8,50 @@ set(CMAKE_C_STANDARD_REQUIRED YES)
 set(CMAKE_C_EXTENSIONS OFF)
 
 # Set compiler flags (UNIX)
-if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
     string(APPEND CMAKE_C_FLAGS_RELEASE " -fcx-limited-range")
-    string(APPEND CMAKE_C_FLAGS_DEBUG " -Wformat=1 -Wno-format-truncation")
-endif()
-if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
+    string(APPEND CMAKE_C_FLAGS_DEBUG " -Wformat=1")
+    string(APPEND CMAKE_C_FLAGS_DEBUG " -Wno-format-truncation")
+endif ()
+
+if (CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
     string(APPEND CMAKE_C_FLAGS " -D_POSIX_C_SOURCE=199309L")
-endif()
-if(CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
-    string(APPEND CMAKE_C_FLAGS " -march=native -Wall -Wextra -Wpedantic")
-    string(APPEND CMAKE_C_FLAGS_RELEASE " -DNDEBUG \
-        -flto=auto \
-        -fno-signed-zeros -fno-math-errno")
-    string(APPEND CMAKE_C_FLAGS_DEBUG " -O0 -g -Werror")
-    string(APPEND CMAKE_C_FLAGS_RELWITHDEBINFO
-           " ${CMAKE_C_FLAGS_RELEASE} -O2 -g")
+endif ()
+
+if (CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
+    string(APPEND CMAKE_C_FLAGS " -march=native")
+    string(APPEND CMAKE_C_FLAGS " -Wall")
+    string(APPEND CMAKE_C_FLAGS " -Wextra")
+    string(APPEND CMAKE_C_FLAGS " -Wpedantic")
+    string(APPEND CMAKE_C_FLAGS_RELEASE " -DNDEBUG")
+    string(APPEND CMAKE_C_FLAGS_RELEASE " -flto=auto")
+    string(APPEND CMAKE_C_FLAGS_RELEASE " -fno-signed-zeros")
+    string(APPEND CMAKE_C_FLAGS_RELEASE " -fno-math-errno")
+    string(APPEND CMAKE_C_FLAGS_DEBUG " -O0")
+    string(APPEND CMAKE_C_FLAGS_DEBUG " -g")
+    string(APPEND CMAKE_C_FLAGS_DEBUG " -Werror")
+    string(APPEND CMAKE_C_FLAGS_RELWITHDEBINFO " ${CMAKE_C_FLAGS_RELEASE}")
+    string(APPEND CMAKE_C_FLAGS_RELWITHDEBINFO " -O2")
+    string(APPEND CMAKE_C_FLAGS_RELWITHDEBINFO " -g")
     string(APPEND CMAKE_C_FLAGS_RELEASE " -O3")
-endif()
+endif ()
 
 # Set path for additional CMake modules
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
-# Include OpenMP
-find_package(OpenMP REQUIRED)
-if(OPENMP_FOUND)
-    string(APPEND CMAKE_C_FLAGS " ${OpenMP_C_FLAGS}")
-endif()
+# Set output path for binaries
+set(CMAKE_BINARY_DIR "${CMAKE_SOURCE_DIR}/bin")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 
-# Include SDL
-find_package(SDL2 REQUIRED)
-if(SDL2_FOUND)
-    include_directories(${SDL2_INCLUDE_DIRS})
-    link_libraries(${SDL2_LIBRARIES})
-endif()
-
-# Include GMP
-find_package(GMP REQUIRED)
-if(GMP_FOUND)
-    include_directories(${GMP_INCLUDE_DIRS})
-    link_libraries(${GMP_LIBRARIES})
-endif()
-
-# Include cJSON
-find_package(cJSON REQUIRED)
-if(cJSON_FOUND)
-    include_directories(${CJSON_INCLUDE_DIRS})
-    link_libraries(${CJSON_LIBRARIES})
-endif()
+# Options
+option(MANDELBROT_DISTRIBUTED
+       "Build in 'distributed' mode, i.e., use static libraries and position-independent code" OFF
+)
 
 # Set name of auxiliary static library (for tests)
 set(AUXILIARY_STATIC_LIBRARY "auxlib")
-set(MANDELBROT_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/src")
 
 # Add the source directory
 add_subdirectory(src)

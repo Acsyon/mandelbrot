@@ -34,6 +34,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Checkout Unity submodule
+      run: |
+        git submodule init submodules/Unity
+        git submodule update --depth 1 --force submodules/Unity
+
     - name: Install clang
       if: matrix.c_compiler == 'clang'
       run: |

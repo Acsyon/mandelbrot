@@ -1,56 +1,45 @@
 # Set additional compiler flags (UNIX)
-if(CMAKE_C_COMPILER_ID STREQUAL "GNU" AND CMAKE_C_COMPILER_VERSION
-                                          VERSION_GREATER_EQUAL 8)
+if (CMAKE_C_COMPILER_ID STREQUAL "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREATER_EQUAL 8)
     string(APPEND CMAKE_C_FLAGS " -fmacro-prefix-map=${CMAKE_SOURCE_DIR}/= ")
-endif()
+endif ()
 
-# Use FetchContent to download Unity if not present
-include(FetchContent)
-FetchContent_Declare(
-    Unity
-    GIT_REPOSITORY https://github.com/ThrowTheSwitch/Unity.git
-    GIT_TAG master # You can specify a version if needed
+# Include unity subdirectory
+add_subdirectory(../submodules/Unity unity EXCLUDE_FROM_ALL)
+
+# Set unity output directory to test directory
+set_target_properties(
+    unity PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+                     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
-FetchContent_MakeAvailable(Unity)
 
-# Link Unity and your source code
-link_directories(${unity_BINARY_DIR})
-include_directories("${unity_SOURCE_DIR}/src")
-link_libraries(unity)
+# Set test source files
+set(TEST_SOURCES
+    app/test_key.c
+    app/test_settings.c
+    data/test_chunk.c
+    data/test_pixel.c
+    util/test_json.c
+    util/test_num.c
+    util/test_sys.c
+    util/test_util.c
+    visuals/test_color.c
+    visuals/test_palette.c
+)
 
-# Link and include auxlib
-include_directories(${MANDELBROT_INCLUDE_DIR})
-link_libraries(${AUXILIARY_STATIC_LIBRARY})
+# Set test binary output directory
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 
-# Enable testing with CTest
-enable_testing()
+# Loop over all tests
+foreach (TEST_SOURCE ${TEST_SOURCES})
+    get_filename_component(TEST_NAME "${TEST_SOURCE}" NAME_WE)
 
-add_executable(test_key app/test_key.c)
-add_test(NAME test_key COMMAND test_key)
+    # Add tests and executables
+    add_executable("${TEST_NAME}" "${TEST_SOURCE}")
+    add_test(NAME "${TEST_NAME}" COMMAND "${TEST_NAME}")
 
-add_executable(test_settings app/test_settings.c)
-add_test(NAME test_settings COMMAND test_settings)
+    # Link and include Unity
+    target_link_libraries("${TEST_NAME}" PRIVATE unity)
 
-add_executable(test_chunk data/test_chunk.c)
-add_test(NAME test_chunk COMMAND test_chunk)
-
-add_executable(test_pixel data/test_pixel.c)
-add_test(NAME test_pixel COMMAND test_pixel)
-
-add_executable(test_json util/test_json.c)
-add_test(NAME test_json COMMAND test_json)
-
-add_executable(test_num util/test_num.c)
-add_test(NAME test_num COMMAND test_num)
-
-add_executable(test_sys util/test_sys.c)
-add_test(NAME test_sys COMMAND test_sys)
-
-add_executable(test_util util/test_util.c)
-add_test(NAME test_util COMMAND test_util)
-
-add_executable(test_color visuals/test_color.c)
-add_test(NAME test_color COMMAND test_color)
-
-add_executable(test_palette visuals/test_palette.c)
-add_test(NAME test_palette COMMAND test_palette)
+    # Link and include auxlib
+    target_link_libraries("${TEST_NAME}" PRIVATE "${AUXILIARY_STATIC_LIBRARY}")
+endforeach ()
