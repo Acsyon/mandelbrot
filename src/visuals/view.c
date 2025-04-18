@@ -2,7 +2,8 @@
 
 #include <stdlib.h>
 
-#include <util/log.h>
+#include <cutil/log.h>
+
 #include <util/util.h>
 
 View *
@@ -89,7 +90,7 @@ View_to_Json(const View *view)
 
     const int status = Json_add_size_t(json, "prec", view->prec);
     if (status != EXIT_SUCCESS) {
-        log_err(
+        cutil_log_error(
           "Error while creating JSON from Settings member '%s'!\n", "prec"
         );
         Json_free(json);
@@ -101,11 +102,11 @@ View_to_Json(const View *view)
         char *const str = Util_mpf_to_str_base10(view->MEMBER);                \
         const int status = Json_add_str(json, #MEMBER, str);                   \
         if (status != EXIT_SUCCESS) {                                          \
-            log_err(                                                           \
+            cutil_log_error(                                                   \
               "Error while creating JSON from Settings member '%s'!\n",        \
               #MEMBER                                                          \
             );                                                                 \
-            Json_free(json);                                                 \
+            Json_free(json);                                                   \
             return NULL;                                                       \
         }                                                                      \
         free(str);                                                             \

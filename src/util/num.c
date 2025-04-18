@@ -2,7 +2,7 @@
 
 #include <math.h>
 
-#include <util/log.h>
+#include <cutil/log.h>
 
 #define DEFINE_INLINE_FUNC_LERP_SINGLE_GENERIC(TYPE)                           \
     static inline TYPE _inline_lerp_single_##TYPE(                             \
@@ -20,7 +20,7 @@ DEFINE_INLINE_FUNC_LERP_SINGLE_GENERIC(float)
     )                                                                          \
     {                                                                          \
         if (x < x0 || x > x1) {                                                \
-            log_err("Outside of interpolation interval");                      \
+            cutil_log_error("Outside of interpolation interval");              \
             return NAN;                                                        \
         }                                                                      \
         return _inline_lerp_single_##TYPE(x0, x1, y0, y1, x);                  \
@@ -65,7 +65,7 @@ DEFINE_FUNC_BSEARCH_GENERIC(float)
         const size_t idx_lo = 0;                                               \
         const size_t idx_hi = num - 1;                                         \
         if (x < xarr[idx_lo] || x > xarr[idx_hi]) {                            \
-            log_err("Outside of interpolation interval");                      \
+            cutil_log_error("Outside of interpolation interval");              \
             return NAN;                                                        \
         }                                                                      \
         const size_t idx = _bsearch_##TYPE(xarr, x, idx_lo, idx_hi);           \

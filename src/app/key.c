@@ -5,7 +5,7 @@
 
 #include <SDL2/SDL.h>
 
-#include <util/log.h>
+#include <cutil/log.h>
 
 unsigned int
 Key_get_cooldown(enum Key key)
@@ -170,7 +170,7 @@ _keyStack_push(struct _keyStack *stack, enum Key key)
         return false;
     }
     if (stack->top == stack->size - 1) {
-        log_wrn("Stack is full\n");
+        cutil_log_warn("Stack is full\n");
         return false;
     }
     stack->data[++stack->top] = key;

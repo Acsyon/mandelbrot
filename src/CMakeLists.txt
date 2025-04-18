@@ -4,8 +4,10 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREA
 endif ()
 
 if (MANDELBROT_DISTRIBUTED)
-    set(BUILD_SHARED_LIBS OFF)
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries" FORCE)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+else ()
+    set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries" FORCE)
 endif ()
 
 # Set source files
@@ -18,9 +20,7 @@ set(SOURCE_FILES
     data/chunk.c
     data/image.c
     data/pixel.c
-    util/getopt.c
     util/json.c
-    util/log.c
     util/num.c
     util/sys.c
     util/util.c
@@ -39,6 +39,10 @@ if (NOT WIN32)
     target_link_libraries("${AUXILIARY_STATIC_LIBRARY}" PRIVATE m)
 endif ()
 set_target_properties("${AUXILIARY_STATIC_LIBRARY}" PROPERTIES OUTPUT_NAME "${PROJECT_NAME}")
+
+# Create main executable
+add_executable("${PROJECT_NAME}" main.c)
+target_link_libraries("${PROJECT_NAME}" PRIVATE "${AUXILIARY_STATIC_LIBRARY}")
 
 # Include OpenMP
 find_package(OpenMP REQUIRED)
@@ -111,7 +115,6 @@ endif ()
 if (MANDELBROT_DISTRIBUTED)
     set(CMAKE_POLICY_VERSION_MINIMUM "3.5")
 
-    set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries" FORCE)
     set(ENABLE_TARGET_EXPORT OFF CACHE BOOL "" FORCE)
     set(ENABLE_CJSON_TEST OFF CACHE BOOL "" FORCE)
     set(ENABLE_CJSON_UNINSTALL OFF CACHE BOOL "" FORCE)
@@ -128,6 +131,12 @@ else ()
     endif ()
 endif ()
 
-# Create main executable
-add_executable("${PROJECT_NAME}" main.c)
-target_link_libraries("${PROJECT_NAME}" PRIVATE "${AUXILIARY_STATIC_LIBRARY}")
+# Include cutil
+add_subdirectory("${CMAKE_SOURCE_DIR}/submodules/cutil" cutil EXCLUDE_FROM_ALL)
+if (MANDELBROT_DISTRIBUTED)
+    target_link_libraries("${AUXILIARY_STATIC_LIBRARY}" PRIVATE cutil-static)
+    target_link_libraries("${PROJECT_NAME}" PRIVATE cutil-static)
+else ()
+    target_link_libraries("${AUXILIARY_STATIC_LIBRARY}" PRIVATE cutil)
+    target_link_libraries("${PROJECT_NAME}" PRIVATE cutil)
+endif ()

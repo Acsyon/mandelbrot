@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "log.h"
+#include <cutil/log.h>
 
 char *
 Util_strdup(const char *str)
@@ -34,12 +34,12 @@ Util_file_to_str(FILE *in)
 
     char *const fstr = malloc(fsize * sizeof *fstr);
     if (fstr == NULL) {
-        log_err("Cannot allocate memory for copy of file!\n");
+        cutil_log_error("Cannot allocate memory for copy of file!\n");
         return NULL;
     }
     const size_t size = fread(fstr, 1UL, fsize, in);
     if (size != (size_t) fsize - 1) {
-        log_err("Cannot copy contents of file!\n");
+        cutil_log_error("Cannot copy contents of file!\n");
         free(fstr);
         return NULL;
     }
