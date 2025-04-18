@@ -1,9 +1,11 @@
 #include <stdlib.h>
 
+#include <cutil/log.h>
+#include <cutil/posix/getopt.h>
+#include <cutil/stringbuilder.h>
+
 #include <app/app.h>
 #include <app/settings.h>
-#include <util/getopt.h>
-#include <util/log.h>
 #include <util/util.h>
 
 #define DEFAULT_SETTINGS_FILENAME "settings.json"
@@ -26,24 +28,24 @@ enum {
     LONGOPTS_ONLY_END_IDX,
 };
 
-static const struct option LONGOPTS[] = {
-  {"help", NO_ARGUMENT, NULL, 'h'},
-  {"env_path", REQUIRED_ARGUMENT, NULL, 'e'},
-  {"load", REQUIRED_ARGUMENT, NULL, 'l'},
-  {"save", REQUIRED_ARGUMENT, NULL, 's'},
-  {"width", REQUIRED_ARGUMENT, NULL, WIDTH_IDX},
-  {"height", REQUIRED_ARGUMENT, NULL, HEIGHT_IDX},
-  {"max_re", REQUIRED_ARGUMENT, NULL, MAX_RE_IDX},
-  {"min_re", REQUIRED_ARGUMENT, NULL, MIN_RE_IDX},
-  {"cntr_im", REQUIRED_ARGUMENT, NULL, CNTR_IM_IDX},
-  {"max_itrs", REQUIRED_ARGUMENT, NULL, MAX_ITRS_IDX},
-  {"num_chnks_re", REQUIRED_ARGUMENT, NULL, NUM_CHNKS_RE_IDX},
-  {"num_chnks_im", REQUIRED_ARGUMENT, NULL, NUM_CHNKS_IM_IDX},
-  {"zoom_fac", REQUIRED_ARGUMENT, NULL, ZOOM_FAC_IDX},
-  {"fps", REQUIRED_ARGUMENT, NULL, FPS_IDX},
-  {"palette_idx", REQUIRED_ARGUMENT, NULL, PALETTE_IDX_IDX},
-  {"trip_mode", REQUIRED_ARGUMENT, NULL, TRIP_MODE_IDX},
-  {"view_file", REQUIRED_ARGUMENT, NULL, VIEW_FILE_IDX},
+static const cutil_Option LONGOPTS[] = {
+  {"help", CUTIL_OPTION_NO_ARGUMENT, NULL, 'h'},
+  {"env_path", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, 'e'},
+  {"load", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, 'l'},
+  {"save", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, 's'},
+  {"width", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, WIDTH_IDX},
+  {"height", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, HEIGHT_IDX},
+  {"max_re", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, MAX_RE_IDX},
+  {"min_re", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, MIN_RE_IDX},
+  {"cntr_im", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, CNTR_IM_IDX},
+  {"max_itrs", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, MAX_ITRS_IDX},
+  {"num_chnks_re", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, NUM_CHNKS_RE_IDX},
+  {"num_chnks_im", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, NUM_CHNKS_IM_IDX},
+  {"zoom_fac", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, ZOOM_FAC_IDX},
+  {"fps", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, FPS_IDX},
+  {"palette_idx", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, PALETTE_IDX_IDX},
+  {"trip_mode", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, TRIP_MODE_IDX},
+  {"view_file", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, VIEW_FILE_IDX},
   {0, 0, 0, 0},
 };
 
@@ -100,10 +102,11 @@ _get_env(int argc, char **argv)
     env->save = NULL;
 
     /* Parse command line input */
-    optind = 0;
+    cutil_optind = 0;
     for (;;) {
         int optidx = 0;
-        const int c = getopt_long(argc, argv, SHORTOPTS, LONGOPTS, &optidx);
+        const int c
+          = cutil_getopt_long(argc, argv, SHORTOPTS, LONGOPTS, &optidx);
         if (c == -1) {
             break;
         }
@@ -112,13 +115,13 @@ _get_env(int argc, char **argv)
             printf("%s", USAGE);
             exit(EXIT_SUCCESS);
         case 'e': /* env_path */
-            env->path = Util_strdup(optarg);
+            env->path = Util_strdup(cutil_optarg);
             break;
         case 'l': /* load */
-            env->load = Util_strdup(optarg);
+            env->load = Util_strdup(cutil_optarg);
             break;
         case 's': /* save */
-            env->save = Util_strdup(optarg);
+            env->save = Util_strdup(cutil_optarg);
             break;
         default: /* bullshit or longopts only */
             if (c >= LONGOPTS_ONLY_START_IDX && c <= LONGOPTS_ONLY_END_IDX) {
@@ -149,10 +152,11 @@ _env_free(struct _env *env)
 static char *
 _concat_paths(const char *path1, const char *path2)
 {
-    const size_t bufsiz = snprintf(NULL, 0, "%s/%s", path1, path2) + 1;
-    char *const buf = malloc(bufsiz * sizeof *buf);
-    sprintf(buf, "%s/%s", path1, path2);
-    return buf;
+    cutil_StringBuilder *const sb = cutil_StringBuilder_create();
+    cutil_StringBuilder_appendf(sb, "%s/%s", path1, path2);
+    char *const res = cutil_StringBuilder_duplicate_string(sb);
+    cutil_StringBuilder_free(sb);
+    return res;
 }
 
 static Settings *
@@ -169,52 +173,53 @@ _get_settings(const struct _env *env, int argc, char **argv)
     }
 
     /* Parse command line input */
-    optind = 0;
+    cutil_optind = 0;
     for (;;) {
         int optidx = 0;
-        const int c = getopt_long(argc, argv, SHORTOPTS, LONGOPTS, &optidx);
+        const int c
+          = cutil_getopt_long(argc, argv, SHORTOPTS, LONGOPTS, &optidx);
         if (c == -1) {
             break;
         }
         switch (c) {
         case WIDTH_IDX: /* width*/
-            settings->width = atoi(optarg);
+            settings->width = atoi(cutil_optarg);
             break;
         case HEIGHT_IDX: /* height*/
-            settings->height = atoi(optarg);
+            settings->height = atoi(cutil_optarg);
             break;
         case MAX_RE_IDX: /* max_re */
-            settings->max_re = atof(optarg);
+            settings->max_re = atof(cutil_optarg);
             break;
         case MIN_RE_IDX: /* min_re */
-            settings->min_re = atof(optarg);
+            settings->min_re = atof(cutil_optarg);
             break;
         case CNTR_IM_IDX: /* cntr_im */
-            settings->cntr_im = atof(optarg);
+            settings->cntr_im = atof(cutil_optarg);
             break;
         case MAX_ITRS_IDX: /* max_itrs */
-            settings->max_itrs = atoi(optarg);
+            settings->max_itrs = atoi(cutil_optarg);
             break;
         case NUM_CHNKS_RE_IDX: /* num_chnks_re */
-            settings->num_chnks_re = atoi(optarg);
+            settings->num_chnks_re = atoi(cutil_optarg);
             break;
         case NUM_CHNKS_IM_IDX: /* num_chnks_im */
-            settings->num_chnks_im = atoi(optarg);
+            settings->num_chnks_im = atoi(cutil_optarg);
             break;
         case ZOOM_FAC_IDX: /* zoom_fac */
-            settings->zoom_fac = atof(optarg);
+            settings->zoom_fac = atof(cutil_optarg);
             break;
         case FPS_IDX: /* fps */
-            settings->fps = atoi(optarg);
+            settings->fps = atoi(cutil_optarg);
             break;
         case PALETTE_IDX_IDX: /* palette_idx */
-            settings->palette_idx = atoi(optarg);
+            settings->palette_idx = atoi(cutil_optarg);
             break;
         case TRIP_MODE_IDX: /* trip_mode */
-            settings->trip_mode = atoi(optarg);
+            settings->trip_mode = atoi(cutil_optarg);
             break;
         case VIEW_FILE_IDX: /* view_file */
-            settings->view_file = Util_strdup(optarg);
+            settings->view_file = Util_strdup(cutil_optarg);
             break;
         default: /* anything else has been handled before */
             break;
@@ -233,7 +238,9 @@ _get_settings(const struct _env *env, int argc, char **argv)
 int
 main(int argc, char **argv)
 {
-    log_set_stream(stdout);
+    cutil_Logger *const log = cutil_Logger_create(CUTIL_LOG_TRACE);
+    cutil_Logger_add_handler(log, stdout, CUTIL_LOG_TRACE);
+    cutil_set_global_logger(log);
 
     struct _env *const env = _get_env(argc, argv);
     Settings *const settings = _get_settings(env, argc, argv);

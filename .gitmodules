@@ -11,3 +11,6 @@
 [submodule "submodules/cJSON"]
 	path = submodules/cJSON
 	url = https://github.com/DaveGamble/cJSON.git
+[submodule "submodules/cutil"]
+	path = submodules/cutil
+	url = https://github.com/Acsyon/cutil.git

@@ -39,6 +39,11 @@ jobs:
         git submodule init submodules/Unity
         git submodule update --depth 1 --force submodules/Unity
 
+    - name: Checkout cutil submodule
+      run: |
+        git submodule init submodules/cutil
+        git submodule update --depth 1 --force submodules/cutil
+
     - name: Install clang
       if: matrix.c_compiler == 'clang'
       run: |

@@ -3,15 +3,6 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREA
     string(APPEND CMAKE_C_FLAGS " -fmacro-prefix-map=${CMAKE_SOURCE_DIR}/= ")
 endif ()
 
-# Include unity subdirectory
-add_subdirectory(../submodules/Unity unity EXCLUDE_FROM_ALL)
-
-# Set unity output directory to test directory
-set_target_properties(
-    unity PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-                     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-)
-
 # Set test source files
 set(TEST_SOURCES
     app/test_key.c
@@ -36,6 +27,7 @@ foreach (TEST_SOURCE ${TEST_SOURCES})
     # Add tests and executables
     add_executable("${TEST_NAME}" "${TEST_SOURCE}")
     add_test(NAME "${TEST_NAME}" COMMAND "${TEST_NAME}")
+    list(APPEND MANDELBROT_TEST_TARGETS "${TEST_NAME}")
 
     # Link and include Unity
     target_link_libraries("${TEST_NAME}" PRIVATE unity)
@@ -43,3 +35,29 @@ foreach (TEST_SOURCE ${TEST_SOURCES})
     # Link and include auxlib
     target_link_libraries("${TEST_NAME}" PRIVATE "${AUXILIARY_STATIC_LIBRARY}")
 endforeach ()
+
+# "check" target that runs the tests
+add_custom_target(
+    check
+    COMMAND "${CMAKE_CTEST_COMMAND}" "--output-on-failure"
+    DEPENDS "${MANDELBROT_TEST_TARGETS}"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    COMMENT "Running mandelbrot tests"
+)
+
+# Fix cutil test binary locations
+if (TARGET cutil-check)
+    foreach (test_target ${CUTIL_TEST_TARGETS})
+        set_target_properties(
+            ${test_target} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/cutil"
+        )
+    endforeach ()
+endif ()
+
+# "check-all" target that runs "mandelbrot" and "cutil" tests
+add_custom_target(
+    check-all
+    DEPENDS check cutil-check
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    COMMENT "Running all tests"
+)

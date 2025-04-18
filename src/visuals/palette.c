@@ -4,7 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <util/log.h>
+#include <cutil/log.h>
+
 #include <util/num.h>
 #include <visuals/color.h>
 
@@ -140,7 +141,9 @@ PaletteCycler_create(Palette_fnc *const *fncs, size_t num, size_t idx)
     memcpy(cycler->fncs, fncs, num * sizeof *fncs);
     if (idx >= num) {
         idx = num - 1;
-        log_wrn("Default palette index too large! Truncating to %zu.\n", idx);
+        cutil_log_warn(
+          "Default palette index too large! Truncating to %zu.\n", idx
+        );
     }
     cycler->idx = idx;
 
@@ -241,7 +244,9 @@ TripModeGenerator_create(enum TripModeType type)
         _tripModeGenerator_init_lerp(tripgen);
         break;
     default:
-        log_wrn("Wrong trip mode type! Using %i instead.\n", TRIP_MODE_PHASE);
+        cutil_log_warn(
+          "Wrong trip mode type! Using %i instead.\n", TRIP_MODE_PHASE
+        );
         _tripModeGenerator_init_phase(tripgen);
         break;
     }

@@ -9,6 +9,8 @@
 #include <gmp.h>
 #include <omp.h>
 
+#include <cutil/log.h>
+
 #include <app/app.h>
 #include <data/pixel.h>
 #include <util/sys.h>
@@ -309,6 +311,8 @@ _imageData_register_zoom(ImageData *imgdata, int stages)
 
     PixelChunk_callback *const callback = &PixelChunk_callback_zoom;
     _imageData_apply_to_all_chunks(imgdata, callback, &stages);
+
+    cutil_log_debug("Performed zoom: %i", stages);
 }
 
 static void
@@ -341,6 +345,8 @@ _imageData_register_shift(ImageData *imgdata, int shift_re, int shift_im)
     PixelChunk_callback *const callback = &PixelChunk_callback_shift;
     const int shifts[] = {shift_re, shift_im};
     _imageData_apply_to_all_chunks(imgdata, callback, shifts);
+
+    cutil_log_debug("Performed shift: %i %i", shift_re, shift_im);
 }
 
 static void
@@ -349,6 +355,8 @@ _imageData_register_reset(ImageData *imgdata)
     _imageData_init_view(imgdata);
     PixelChunk_callback *const callback = &PixelChunk_callback_reset;
     _imageData_apply_to_all_chunks(imgdata, callback, NULL);
+
+    cutil_log_debug("Performed reset");
 }
 
 static void
@@ -358,6 +366,8 @@ _imageData_register_view_save(ImageData *imgdata)
     char *const fname = imgdata->view_fname;
 
     JsonUtil_write(view, fname, &View_to_Json_void);
+
+    cutil_log_debug("Saved view");
 }
 
 static void
@@ -369,6 +379,8 @@ _imageData_register_view_load(ImageData *imgdata)
     JsonUtil_read(view, fname, &View_fill_from_Json_void);
     PixelChunk_callback *const callback = &PixelChunk_callback_reset;
     _imageData_apply_to_all_chunks(imgdata, callback, NULL);
+
+    cutil_log_debug("Loaded view");
 }
 
 /**

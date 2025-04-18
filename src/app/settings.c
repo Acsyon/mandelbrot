@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <util/log.h>
+#include <cutil/log.h>
+
 #include <util/util.h>
 
 #define DEFAULT_WIDTH 800
@@ -137,7 +138,7 @@ Settings_to_Json(const Settings *settings)
     do {                                                                       \
         const int status = Json_add_##TYPE(json, #MEMBER, settings->MEMBER);   \
         if (status != EXIT_SUCCESS) {                                          \
-            log_wrn(                                                           \
+            cutil_log_warn(                                                    \
               "Failed to create JSON field from Settings member '%s'!\n",      \
               #MEMBER                                                          \
             );                                                                 \

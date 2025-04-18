@@ -5,7 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "log.h"
+#include <cutil/log.h>
+#include <cutil/stringbuilder.h>
 
 char *
 Util_strdup(const char *str)
@@ -34,48 +35,52 @@ Util_file_to_str(FILE *in)
 
     char *const fstr = malloc(fsize * sizeof *fstr);
     if (fstr == NULL) {
-        log_err("Cannot allocate memory for copy of file!\n");
+        cutil_log_error("Cannot allocate memory for copy of file!\n");
         return NULL;
     }
     const size_t size = fread(fstr, 1UL, fsize, in);
     if (size != (size_t) fsize - 1) {
-        log_err("Cannot copy contents of file!\n");
+        cutil_log_error("Cannot copy contents of file!\n");
         free(fstr);
         return NULL;
     }
     return fstr;
 }
 
-char *
-Util_mpf_to_str_base10(mpf_srcptr mpf)
+static char *
+_get_mpf_str_base10(mpf_srcptr mpf, mp_exp_t *p_exp)
 {
     static const int BASE = 10;
     const double log2 = log(2);
     const double logb = log(abs(BASE));
 
     const mp_bitcnt_t prec = mpf_get_prec(mpf);
-    const size_t maxlen_mantissa = prec * ceil(log2 / logb);
-    const size_t maxlen_exponent = ceil(log(maxlen_mantissa) / logb);
+    const size_t maxlen_mantissa = prec * ceil(log2 / logb) + 1;
+    char *const mantissa_str = malloc(maxlen_mantissa * sizeof *mantissa_str);
 
-    const size_t maxlen = sizeof "+0.e" + maxlen_mantissa + maxlen_exponent;
-    char *res = malloc(maxlen * sizeof *res);
+    mpf_get_str(mantissa_str, p_exp, BASE, maxlen_mantissa, mpf);
 
-    const bool is_negative = (mpf_sgn(mpf) < 0);
-    sprintf(res, "%s", (is_negative) ? "-0." : "0.");
+    return mantissa_str;
+}
 
-    const size_t buflen = maxlen_mantissa + 1;
-    char *const buf = malloc(buflen * sizeof *res);
+char *
+Util_mpf_to_str_base10(mpf_srcptr mpf)
+{
+    cutil_StringBuilder *const sb = cutil_StringBuilder_create();
 
+    const char *const sgn_str = (mpf_sgn(mpf) < 0) ? "-0." : "0.";
     mp_exp_t exp;
-    mpf_get_str(buf, &exp, BASE, buflen, mpf);
-    res = strcat(res, &buf[(is_negative) ? 1 : 0]);
+    char *const mantissa_str = _get_mpf_str_base10(mpf, &exp);
 
-    sprintf(buf, "e%li", exp);
-    res = strcat(res, buf);
+    cutil_StringBuilder_appendf(sb, "%s", sgn_str);
+    cutil_StringBuilder_appendf(sb, "%s", mantissa_str);
+    cutil_StringBuilder_appendf(sb, "e%li", exp);
 
-    free(buf);
-    const size_t len = strlen(res) + 1;
-    return realloc(res, len * sizeof *res);
+    free(mantissa_str);
+
+    char *const res = cutil_StringBuilder_duplicate_string(sb);
+    cutil_StringBuilder_free(sb);
+    return res;
 }
 
 mp_bitcnt_t

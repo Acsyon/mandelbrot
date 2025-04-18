@@ -4,11 +4,12 @@
 
 #include <SDL2/SDL.h>
 
+#include <cutil/log.h>
+
 #include <app/app.h>
 #include <app/data.h>
 #include <app/key.h>
 #include <app/settings.h>
-#include <util/log.h>
 #include <util/num.h>
 #include <util/sys.h>
 #include <visuals/palette.h>
@@ -71,7 +72,9 @@ _video_alloc(const Settings *settings, GraphicsData *gfxdata)
       height, SDL_WINDOW_SHOWN
     );
     if (video->window == NULL) {
-        log_err("Window could not be created! SDL_Error: %s\n", SDL_GetError());
+        cutil_log_error(
+          "Window could not be created! SDL_Error: %s\n", SDL_GetError()
+        );
         _video_free(video);
         return NULL;
     }

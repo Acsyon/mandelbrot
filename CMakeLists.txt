@@ -53,6 +53,18 @@ option(MANDELBROT_DISTRIBUTED
 # Set name of auxiliary static library (for tests)
 set(AUXILIARY_STATIC_LIBRARY "auxlib")
 
+# Include unity already here to prevent cutil submodule from being chosen
+if (ENABLE_TESTS)
+    # Include unity subdirectory
+    add_subdirectory(submodules/Unity unity EXCLUDE_FROM_ALL)
+
+    # Set unity output directory
+    set_target_properties(
+        unity PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+                         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    )
+endif ()
+
 # Add the source directory
 add_subdirectory(src)
 
