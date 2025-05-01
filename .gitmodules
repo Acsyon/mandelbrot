@@ -14,3 +14,6 @@
 [submodule "submodules/cutil"]
 	path = submodules/cutil
 	url = https://github.com/Acsyon/cutil.git
+[submodule "submodules/mpir"]
+	path = submodules/mpir
+	url = https://github.com/BrianGladman/mpir

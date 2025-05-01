@@ -3,22 +3,6 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREA
     string(APPEND CMAKE_C_FLAGS " -fmacro-prefix-map=${CMAKE_SOURCE_DIR}/= ")
 endif ()
 
-# Treating warnings as errors would prevent compilation for MSVC
-if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
-    string(REPLACE " /WX" "" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
-endif ()
-
-if (NOT TARGET unity)
-    # Include unity subdirectory
-    add_subdirectory(../submodules/Unity unity EXCLUDE_FROM_ALL)
-
-    # Set unity output directory to test directory
-    set_target_properties(
-        unity PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-                         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-    )
-endif ()
-
 # Set output path for binaries
 if (WIN32)
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")

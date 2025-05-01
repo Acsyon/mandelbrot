@@ -78,37 +78,85 @@ else ()
     endif ()
 endif ()
 
-# Include GMP
+# Include GMP / MPIR
 if (MANDELBROT_DISTRIBUTED)
-    set(GMP_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/gmp-install")
-    file(MAKE_DIRECTORY "${GMP_INSTALL_DIR}")
+    if (NOT WIN32)
+        set(GMP_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/gmp-install")
+        file(MAKE_DIRECTORY "${GMP_INSTALL_DIR}")
 
-    set(GMP_INCLUDE_DIR "${GMP_INSTALL_DIR}/include")
-    set(GMP_LIB_FILE "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libgmp.a")
-    set(GMP_HEADER_FILE "${GMP_INCLUDE_DIR}/gmp.h")
+        set(GMP_INCLUDE_DIR "${GMP_INSTALL_DIR}/include")
+        set(GMP_LIB_FILE "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libgmp.a")
+        set(GMP_HEADER_FILE "${GMP_INCLUDE_DIR}/gmp.h")
 
-    add_custom_command(
-        OUTPUT "${GMP_LIB_FILE}" "${GMP_HEADER_FILE}"
-        COMMAND ./.bootstrap
-        COMMAND ./configure --disable-shared "--prefix=${GMP_INSTALL_DIR}"
-                "--libdir=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}" --with-pic
-        COMMAND make "-j${nproc}"
-        COMMAND make install
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/submodules/gmp"
-        COMMENT "Building GMP and installing to ${GMP_INSTALL_DIR}"
-    )
+        add_custom_command(
+            OUTPUT "${GMP_LIB_FILE}" "${GMP_HEADER_FILE}"
+            COMMAND ./.bootstrap
+            COMMAND ./configure --disable-shared "--prefix=${GMP_INSTALL_DIR}"
+                    "--libdir=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}" --with-pic
+            COMMAND make "-j${nproc}"
+            COMMAND make install
+            WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/submodules/gmp"
+            COMMENT "Building GMP and installing to ${GMP_INSTALL_DIR}"
+        )
 
-    add_custom_target(build_gmp ALL DEPENDS "${GMP_LIB_FILE}" "${GMP_HEADER_FILE}")
+        add_custom_target(build_gmp ALL DEPENDS "${GMP_LIB_FILE}" "${GMP_HEADER_FILE}")
 
-    if (EXISTS "${GMP_LIB_FILE}" AND EXISTS "${GMP_HEADER_FILE}")
-        message(STATUS "Found GMP library at: ${GMP_LIB_FILE}")
+        if (EXISTS "${GMP_LIB_FILE}" AND EXISTS "${GMP_HEADER_FILE}")
+            message(STATUS "Found GMP library at: ${GMP_LIB_FILE}")
+        else ()
+            message(STATUS "GMP will be built during compilation")
+        endif ()
+
+        add_dependencies("${AUXILIARY_STATIC_LIBRARY}" build_gmp)
+        target_include_directories("${AUXILIARY_STATIC_LIBRARY}" PRIVATE "${GMP_INCLUDE_DIR}")
+        target_link_libraries("${AUXILIARY_STATIC_LIBRARY}" PRIVATE "${GMP_LIB_FILE}")
     else ()
-        message(STATUS "GMP will be built during compilation")
-    endif ()
+        # MPIR configuration for Windows using MSBuild
+        set(MPIR_INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}/mpir-install")
+        file(MAKE_DIRECTORY "${MPIR_INSTALL_DIR}")
 
-    add_dependencies("${AUXILIARY_STATIC_LIBRARY}" build_gmp)
-    target_include_directories("${AUXILIARY_STATIC_LIBRARY}" PRIVATE "${GMP_INCLUDE_DIR}")
-    target_link_libraries("${AUXILIARY_STATIC_LIBRARY}" PRIVATE "${GMP_LIB_FILE}")
+        # Paths to the build.vc directory
+        set(MPIR_BUILD_VC_DIR "${CMAKE_SOURCE_DIR}/submodules/mpir/msvc/vs22")
+        
+        # Library paths - these might need adjustment based on your MPIR version
+        set(MPIR_LIB_FILE "${MPIR_BUILD_VC_DIR}/x64/Release/MpirDll/mpir.lib")  # Dynamic lib
+        set(MPIR_STATIC_LIB "${MPIR_BUILD_VC_DIR}/x64/Release/StaticLib/mpir.lib")  # Static lib
+        
+        # Choose which version you want (static or dynamic)
+        set(MPIR_LIB_TO_USE "${MPIR_STATIC_LIB}")  # Change to MPIR_LIB_FILE if you want dynamic
+        
+        set(MPIR_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/submodules/mpir")
+        set(MPIR_HEADER_FILE "${MPIR_INCLUDE_DIR}/mpir.h")
+
+        # Determine build platform (x64 or Win32)
+        if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+            set(MPIR_PLATFORM "x64")
+        else()
+            set(MPIR_PLATFORM "Win32")
+        endif()
+
+        add_custom_command(
+            OUTPUT "${MPIR_LIB_TO_USE}" "${MPIR_HEADER_FILE}"
+            COMMAND msbuild mpir.sln /p:Configuration=Release /p:Platform=${MPIR_PLATFORM}
+            WORKING_DIRECTORY "${MPIR_BUILD_VC_DIR}"
+            COMMENT "Building MPIR for ${MPIR_PLATFORM} platform"
+        )
+
+        add_custom_target(build_mpir ALL DEPENDS "${MPIR_LIB_TO_USE}" "${MPIR_HEADER_FILE}")
+
+        if(EXISTS "${MPIR_LIB_TO_USE}" AND EXISTS "${MPIR_HEADER_FILE}")
+            message(STATUS "Found MPIR library at: ${MPIR_LIB_TO_USE}")
+        else()
+            message(STATUS "MPIR will be built during compilation")
+        endif()
+
+        add_dependencies("${AUXILIARY_STATIC_LIBRARY}" build_mpir)
+        target_include_directories("${AUXILIARY_STATIC_LIBRARY}" PRIVATE "${MPIR_INCLUDE_DIR}")
+        target_link_libraries("${AUXILIARY_STATIC_LIBRARY}" PRIVATE "${MPIR_LIB_TO_USE}")
+
+        # For compatibility with code expecting GMP headers
+        target_compile_definitions("${AUXILIARY_STATIC_LIBRARY}" PRIVATE USE_MPIR=1)
+    endif ()
 else ()
     find_package(GMP REQUIRED)
     if (GMP_FOUND)

@@ -9,7 +9,11 @@
 
 #include <stdio.h>
 
-#include <gmp.h>
+#ifndef USE_MPIR
+    #include <gmp.h>
+#else
+    #include <mpir.h>
+#endif
 
 /**
  * Copies string `str` to newly malloc'd memory.

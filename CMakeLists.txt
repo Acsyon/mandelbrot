@@ -62,6 +62,11 @@ option(MANDELBROT_DISTRIBUTED
        "Build in 'distributed' mode, i.e., use static libraries and position-independent code" OFF
 )
 
+# On Windows, we can only run in distributed mode
+if (WIN32)
+    set(MANDELBROT_DISTRIBUTED TRUE)
+endif ()
+
 # Set name of auxiliary static library (for tests)
 set(AUXILIARY_STATIC_LIBRARY "auxlib")
 
