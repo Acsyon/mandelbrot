@@ -44,6 +44,11 @@ set_target_properties("${AUXILIARY_STATIC_LIBRARY}" PROPERTIES OUTPUT_NAME "${PR
 add_executable("${PROJECT_NAME}" main.c)
 target_link_libraries("${PROJECT_NAME}" PRIVATE "${AUXILIARY_STATIC_LIBRARY}")
 
+# Treating warnings as errors would prevent compilation for MSVC
+if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+    string(REPLACE " /WX" "" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
+endif ()
+
 # Include OpenMP
 find_package(OpenMP REQUIRED)
 if (OpenMP_C_FOUND)
