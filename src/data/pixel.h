@@ -9,11 +9,7 @@
 
 #include <inttypes.h>
 
-#ifndef USE_MPIR
-    #include <gmp.h>
-#else
-    #include <mpir.h>
-#endif
+#include <gmp.h>
 
 /**
  * Struct for buffer of thread-safe variables

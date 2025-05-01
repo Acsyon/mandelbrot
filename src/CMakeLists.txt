@@ -37,8 +37,10 @@ target_include_directories(
 )
 if (NOT WIN32)
     target_link_libraries("${AUXILIARY_STATIC_LIBRARY}" PRIVATE m)
+    set_target_properties("${AUXILIARY_STATIC_LIBRARY}" PROPERTIES OUTPUT_NAME "${PROJECT_NAME}")
+else ()
+    set_target_properties("${AUXILIARY_STATIC_LIBRARY}" PROPERTIES OUTPUT_NAME "lib${PROJECT_NAME}")
 endif ()
-set_target_properties("${AUXILIARY_STATIC_LIBRARY}" PROPERTIES OUTPUT_NAME "${PROJECT_NAME}")
 
 # Create main executable
 add_executable("${PROJECT_NAME}" main.c)
@@ -117,41 +119,44 @@ if (MANDELBROT_DISTRIBUTED)
 
         # Paths to the build.vc directory
         set(MPIR_BUILD_VC_DIR "${CMAKE_SOURCE_DIR}/submodules/mpir/msvc/vs22")
-        
+
         # Library paths - these might need adjustment based on your MPIR version
-        set(MPIR_LIB_FILE "${MPIR_BUILD_VC_DIR}/x64/Release/MpirDll/mpir.lib")  # Dynamic lib
-        set(MPIR_STATIC_LIB "${MPIR_BUILD_VC_DIR}/x64/Release/StaticLib/mpir.lib")  # Static lib
-        
+        set(MPIR_LIB_FILE "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/mpir.dll") # Dynamic lib
+        set(MPIR_STATIC_LIB "${CMAKE_SOURCE_DIR}/submodules/mpir/lib/x64/Release/mpir.lib"
+        )# Static lib
+
         # Choose which version you want (static or dynamic)
-        set(MPIR_LIB_TO_USE "${MPIR_STATIC_LIB}")  # Change to MPIR_LIB_FILE if you want dynamic
-        
+        set(MPIR_LIB_TO_USE "${MPIR_STATIC_LIB}") # Change to MPIR_LIB_FILE if you want dynamic
+
         set(MPIR_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/submodules/mpir")
         set(MPIR_HEADER_FILE "${MPIR_INCLUDE_DIR}/mpir.h")
 
         # Determine build platform (x64 or Win32)
-        if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        if (CMAKE_SIZEOF_VOID_P EQUAL 8)
             set(MPIR_PLATFORM "x64")
-        else()
+        else ()
             set(MPIR_PLATFORM "Win32")
-        endif()
+        endif ()
 
         add_custom_command(
             OUTPUT "${MPIR_LIB_TO_USE}" "${MPIR_HEADER_FILE}"
-            COMMAND msbuild mpir.sln /p:Configuration=Release /p:Platform=${MPIR_PLATFORM}
+            COMMAND msbuild.bat gc LIB ${MPIR_PLATFORM} Release
+                    /p:OutDir=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
             WORKING_DIRECTORY "${MPIR_BUILD_VC_DIR}"
             COMMENT "Building MPIR for ${MPIR_PLATFORM} platform"
         )
 
         add_custom_target(build_mpir ALL DEPENDS "${MPIR_LIB_TO_USE}" "${MPIR_HEADER_FILE}")
 
-        if(EXISTS "${MPIR_LIB_TO_USE}" AND EXISTS "${MPIR_HEADER_FILE}")
+        if (EXISTS "${MPIR_LIB_TO_USE}" AND EXISTS "${MPIR_HEADER_FILE}")
             message(STATUS "Found MPIR library at: ${MPIR_LIB_TO_USE}")
-        else()
+        else ()
             message(STATUS "MPIR will be built during compilation")
-        endif()
+        endif ()
 
         add_dependencies("${AUXILIARY_STATIC_LIBRARY}" build_mpir)
         target_include_directories("${AUXILIARY_STATIC_LIBRARY}" PRIVATE "${MPIR_INCLUDE_DIR}")
+        target_include_directories("${PROJECT_NAME}" PRIVATE "${MPIR_INCLUDE_DIR}")
         target_link_libraries("${AUXILIARY_STATIC_LIBRARY}" PRIVATE "${MPIR_LIB_TO_USE}")
 
         # For compatibility with code expecting GMP headers
@@ -176,6 +181,10 @@ if (MANDELBROT_DISTRIBUTED)
     set(ENABLE_CJSON_VERSION_SO OFF CACHE BOOL "" FORCE)
 
     add_subdirectory("${CMAKE_SOURCE_DIR}/submodules/cJSON" cJSON EXCLUDE_FROM_ALL)
+    target_include_directories(
+        "${AUXILIARY_STATIC_LIBRARY}" PRIVATE "${CMAKE_SOURCE_DIR}/submodules/cJSON"
+    )
+    target_include_directories("${PROJECT_NAME}" PRIVATE "${CMAKE_SOURCE_DIR}/submodules/cJSON")
     target_link_libraries("${AUXILIARY_STATIC_LIBRARY}" PRIVATE cjson)
 else ()
     find_package(cJSON REQUIRED)

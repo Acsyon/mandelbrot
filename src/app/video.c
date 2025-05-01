@@ -102,8 +102,9 @@ _video_write_framebuffer(Video *video)
 
     const float *const pxdata = GraphicsData_get_pixel_data(gfxdata);
     uint32_t *const buf = video->image->pixels;
+    int i;
 #pragma omp parallel for collapse(2)
-    for (int i = 0; i < width; ++i) {
+    for (i = 0; i < width; ++i) {
         for (int j = 0; j < height; ++j) {
             buf[j * width + i]
               = video->palette(pxdata[i * height + j], video->palette_params);
