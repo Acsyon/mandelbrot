@@ -26,6 +26,14 @@ set(TEST_SOURCES
 # Set test binary output directory
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
 
+if (MANDELBROT_DISTRIBUTED)
+    find_package(SDL2 PATHS "${CMAKE_INSTALL_PREFIX}" NO_DEFAULT_PATH)
+    find_package(cJSON PATHS "${CMAKE_INSTALL_PREFIX}" NO_DEFAULT_PATH)
+else ()
+    find_package(SDL2 REQUIRED)
+    find_package(cJSON REQUIRED)
+endif ()
+
 # Loop over all tests
 foreach (TEST_SOURCE ${TEST_SOURCES})
     get_filename_component(TEST_NAME "${TEST_SOURCE}" NAME_WE)
@@ -40,6 +48,18 @@ foreach (TEST_SOURCE ${TEST_SOURCES})
 
     # Link and include auxlib
     target_link_libraries("${TEST_NAME}" PRIVATE "${AUXILIARY_STATIC_LIBRARY}")
+
+    # Link GMP / MPIR, SDL and cJSON
+    if (MANDELBROT_DISTRIBUTED)
+        target_include_directories("${TEST_NAME}" PRIVATE "${CMAKE_INSTALL_PREFIX}/include")
+        target_link_directories("${TEST_NAME}" PRIVATE "${CMAKE_INSTALL_PREFIX}/lib")
+    endif ()
+    if (NOT WIN32)
+        target_link_libraries("${TEST_NAME}" PRIVATE gmp)
+    else ()
+        target_link_libraries("${TEST_NAME}" PRIVATE mpir)
+    endif ()
+    target_link_libraries("${TEST_NAME}" PRIVATE SDL2::SDL2 cjson)
 endforeach ()
 
 # "check" target that runs the tests
