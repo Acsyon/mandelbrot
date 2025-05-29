@@ -36,7 +36,25 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
     string(APPEND CMAKE_C_FLAGS_RELEASE " -O3")
 endif ()
 
-# Set path for additional CMake modules
+# Set compiler flags (MSVC)
+if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+    string(APPEND CMAKE_C_FLAGS " /W4")
+    string(APPEND CMAKE_C_FLAGS_RELEASE " /O2")
+    string(APPEND CMAKE_C_FLAGS_RELEASE " /DNDEBUG")
+    string(APPEND CMAKE_C_FLAGS_RELEASE " /MT")
+    string(APPEND CMAKE_C_FLAGS_DEBUG " /WX")
+    string(APPEND CMAKE_C_FLAGS_DEBUG " /Od")
+    string(APPEND CMAKE_C_FLAGS_DEBUG " /Zi")
+    string(APPEND CMAKE_C_FLAGS_DEBUG " /MTd")
+    string(APPEND CMAKE_C_FLAGS_RELWITHDEBINFO " ${CMAKE_C_FLAGS_RELEASE}")
+    string(APPEND CMAKE_C_FLAGS_RELWITHDEBINFO " /Zi")
+endif ()
+
+# Set paths for local installations and additional CMake modules
+set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/.local" CACHE PATH "Local installation directory"
+                                                            FORCE
+)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/.local/lib")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 # Set output path for binaries
@@ -49,6 +67,11 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
 option(MANDELBROT_DISTRIBUTED
        "Build in 'distributed' mode, i.e., use static libraries and position-independent code" OFF
 )
+
+# On Windows, we can only run in distributed mode
+if (WIN32)
+    set(MANDELBROT_DISTRIBUTED TRUE)
+endif ()
 
 # Set name of auxiliary static library (for tests)
 set(AUXILIARY_STATIC_LIBRARY "auxlib")

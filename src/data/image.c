@@ -283,8 +283,9 @@ _imageData_apply_to_all_chunks(
 {
     ChunkData *const chunks = &imgdata->chunks;
     const int num_tot = chunks->num_re * chunks->num_im;
-#pragma omp parallel for
-    for (int idx = 0; idx < num_tot; ++idx) {
+    int idx;
+#pragma omp parallel for private(idx)
+    for (idx = 0; idx < num_tot; ++idx) {
         PixelChunk *const chunk = &chunks->data[idx];
         callback(chunk, chunks, vparams);
     }
@@ -399,8 +400,9 @@ _imageData_update_framebuffer(ImageData *imgdata)
     const int num_px_re = params->num_px_re;
     const int num_px_im = params->num_px_im;
 
-#pragma omp parallel for
-    for (int idx_chnk = 0; idx_chnk < num_chnks_tot; ++idx_chnk) {
+    int idx_chnk;
+#pragma omp parallel for private (idx_chnk)
+    for (idx_chnk = 0; idx_chnk < num_chnks_tot; ++idx_chnk) {
         const PixelChunk *const chunk = &chunks->data[idx_chnk];
         for (int idx_px_re = 0; idx_px_re < num_px_re; ++idx_px_re) {
             for (int idx_px_im = 0; idx_px_im < num_px_im; ++idx_px_im) {

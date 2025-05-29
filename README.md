@@ -5,7 +5,7 @@ A C99 program that visualizes the Mandelbrot set and allows interactive explorat
 
 ## Features
 
--   **Real-time Navigation**: Move through the Mandelbrot set using key presses.
+-   **Real-Time Navigation**: Move through the Mandelbrot set using key presses.
     
 -   **Smooth Zooming**: Zoom in and out for deep exploration of fractal details.
     
@@ -29,52 +29,113 @@ This project relies on the following external libraries:
 -   [GMP](https://gmplib.org/) - Arbitrary-precision arithmetic.
     
 -   [OpenMP](https://www.openmp.org/) - Multi-threaded parallelization.
-    
+
+-   [cutil](https://github.com/Acsyon/cutil) - My own C utility library.
 
 ## Installation
 
+There are two modes of installation:
+
+-   **Development**: This is the default. It lets CMake search for installed packages and is only available on Linux.
+
+-   **Distributed**: This one is used to create a single, statically linked executable that can be distributed to other people without the need for external dependencies. The required libraries are included as git submodules and built from scratch. On Windows, it uses [MPIR](https://github.com/BrianGladman/mpir) as a drop-in replacement for GMP.
+
 ### Prerequisites
+
+This project uses CMake as its build system, so make sure to have it installed.
+
+Additionally, one or more git submodules need to be included depending on the installation mode. Since cutil is my own custom C library, there is no package for it. Therefore, it has to be included as submodule for both modes:
+
+```sh
+git submodule update --init --remote submodules/cutil
+```
+
+For the "distributed" mode, it is easiest to load all submodules via:
+
+```sh
+git submodule update --init --recursive --remote
+```
+
+### Preparing the "Development" Mode
 
 Ensure you have the required libraries and build systems installed on your system (OpenMP comes automatically with GCC but is required for Clang):
 
 #### Arch-based systems:
 
-```
-sudo pacman -S sdl2-compat gmp cjson [clang openmp] [cmake]
+```sh
+sudo pacman -S sdl2-compat gmp cjson [clang openmp]
 ```
 
 #### Debian-based systems:
 
+```sh
+sudo apt install libsdl2-dev libgmp-dev libcjson-dev [clang libomp-dev]
 ```
-sudo apt install libsdl2-dev libgmp-dev libcjson-dev [clang libomp-dev] [cmake]
+
+#### Preparing the build
+
+Run the following commands to configure CMake and prepare it for building:
+
+```sh
+cd build
+cmake [-DCMAKE_BUILD_TYPE=<TYPE>] ..
 ```
 
-#### MacOS:
+Here, `TYPE` specifies the build type. Possible options are
 
-TBA
+-   **Release**: Enables the highest (sensible) compiler optimizations to improve perfomance (recommended).
 
-#### Windows:
+-   **Debug**: Disables compiler optimizations and includes debug symbols into the executable.
 
-lol, idk. Just use WSL or switch to a proper OS.
+-   **RelWithDebInfo** (release with debug info): Enable many compiler optimizations, but also include debug symbols.
+
+### Preparing the "Distributed" Mode
+
+Ensure that you have initialized all submodules. Thereafter, you can activate the "distributed" mode by setting the appropriate variable in CMake:
+
+```sh
+cd build
+cmake -DMANDELBROT_DISTRIBUTED=TRUE [-DCMAKE_BUILD_TYPE=<TYPE>] ..
+```
 
 ### Building the Project
 
-This project uses CMake for building. Run the following commands:
+After having configured the installation mode and regardless of the platform, CMake can also be used to build the project:
 
-```
+```sh
 cd build
-cmake [-DCMAKE_BUILD_TYPE=Release] ..
-make
+cmake --build .
+```
+
+## Unit Tests
+
+If you &ndash; for whatever reason &ndash; want to run the unit tests, you have to load the git submodule for the "Unity" unit-test framework:
+
+```sh
+git submodule update --init --remote submodules/Unity
+```
+
+Afterwards, CMake has to be set up with the appropriate variable. The tests will be built automatically if no target is specified. They can be run using CTest. All of this can be achieved by running the following commands:
+
+```sh
+cd build
+cmake -DENABLE_TESTS=TRUE [-DMANDELBROT_DISTRIBUTED=TRUE] [-DCMAKE_BUILD_TYPE=<TYPE>] ..
+cmake --build .
+ctest
 ```
 
 ## Usage
 
 ### Running the Program
 
-```
+You can run the program either via the command line:
+
+```sh
 cd bin
 ./mandelbrot [options]
 ```
+
+Alternatively, the executable can also be started via your file browser.
 
 ### Command-Line Arguments
 
@@ -104,7 +165,7 @@ Command-line arguments take precedence over the JSON configuration.
 
 The JSON field names are identical to their corresponding command-line options:
 
-```
+```json
 {
   "max_itrs": 500,
   "num_chnks_re": 20,
@@ -117,7 +178,7 @@ The JSON field names are identical to their corresponding command-line options:
   "cntr_im": 0,
   "fps": 30,
   "palette_idx": 4,
-  "trip_mode": 0
+  "trip_mode": 0,
   "view_file": "view.json"
 }
 ```
@@ -137,3 +198,6 @@ The JSON field names are identical to their corresponding command-line options:
 ## License
 
 This project is licensed under the MIT License.
+
+## Contact
+For any questions or discussions, feel free to reach to me.
