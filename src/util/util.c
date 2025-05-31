@@ -17,12 +17,12 @@ Util_file_to_str(FILE *in)
 
     char *const fstr = malloc(fsize * sizeof *fstr);
     if (fstr == NULL) {
-        cutil_log_error("Cannot allocate memory for copy of file!\n");
+        cutil_log_error("Cannot allocate memory for copy of file");
         return NULL;
     }
     const size_t size = fread(fstr, 1UL, fsize, in);
     if (size != (size_t) fsize - 1) {
-        cutil_log_error("Cannot copy contents of file!\n");
+        cutil_log_error("Cannot copy contents of file");
         free(fstr);
         return NULL;
     }

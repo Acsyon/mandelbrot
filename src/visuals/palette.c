@@ -142,7 +142,7 @@ PaletteCycler_create(Palette_fnc *const *fncs, size_t num, size_t idx)
     if (idx >= num) {
         idx = num - 1;
         cutil_log_warn(
-          "Default palette index too large! Truncating to %zu.\n", idx
+          "Default palette index too large, truncating to %zu", idx
         );
     }
     cycler->idx = idx;
@@ -243,7 +243,7 @@ TripModeGenerator_create(enum TripModeType type)
         break;
     default:
         cutil_log_warn(
-          "Wrong trip mode type! Using %i instead.\n", TRIP_MODE_PHASE
+          "Wrong trip mode type, using %i instead", TRIP_MODE_PHASE
         );
         _tripModeGenerator_init_phase(tripgen);
         break;

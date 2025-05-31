@@ -71,7 +71,7 @@ _video_alloc(const Settings *settings, GraphicsData *gfxdata)
     );
     if (video->window == NULL) {
         cutil_log_error(
-          "Window could not be created! SDL_Error: %s\n", SDL_GetError()
+          "Window could not be created, SDL_Error: %s", SDL_GetError()
         );
         _video_free(video);
         return NULL;

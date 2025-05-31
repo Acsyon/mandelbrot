@@ -89,7 +89,7 @@ View_to_Json(const View *view)
     const int status = Json_add_size_t(json, "prec", view->prec);
     if (status != EXIT_SUCCESS) {
         cutil_log_error(
-          "Error while creating JSON from Settings member '%s'!\n", "prec"
+          "Error while creating JSON from Settings member '%s'", "prec"
         );
         Json_free(json);
         return NULL;
@@ -101,8 +101,7 @@ View_to_Json(const View *view)
         const int status = Json_add_str(json, #MEMBER, str);                   \
         if (status != EXIT_SUCCESS) {                                          \
             cutil_log_error(                                                   \
-              "Error while creating JSON from Settings member '%s'!\n",        \
-              #MEMBER                                                          \
+              "Error while creating JSON from Settings member '%s'", #MEMBER   \
             );                                                                 \
             Json_free(json);                                                   \
             return NULL;                                                       \

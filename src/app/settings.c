@@ -135,8 +135,7 @@ Settings_to_Json(const Settings *settings)
         const int status = Json_add_##TYPE(json, #MEMBER, settings->MEMBER);   \
         if (status != EXIT_SUCCESS) {                                          \
             cutil_log_warn(                                                    \
-              "Failed to create JSON field from Settings member '%s'!\n",      \
-              #MEMBER                                                          \
+              "Failed to create JSON field from Settings member '%s'", #MEMBER \
             );                                                                 \
         }                                                                      \
     } while (0)

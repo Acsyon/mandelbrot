@@ -17,7 +17,7 @@ Json_from_string(const char *str)
     cJSON *const json = cJSON_Parse(str);
     if (json == NULL) {
         const char *errptr = cJSON_GetErrorPtr();
-        cutil_log_error("Error while reading JSON before '%s'!\n", errptr);
+        cutil_log_error("Error while reading JSON before '%s'", errptr);
     }
     return json;
 }
@@ -126,7 +126,7 @@ JsonUtil_read(void *obj, const char *fname, JsonUtilReadCallback *callback)
 {
     FILE *const in = fopen(fname, "r");
     if (in == NULL) {
-        cutil_log_error("Cannot open file '%s'!\n", fname);
+        cutil_log_error("Cannot open file '%s'", fname);
         return;
     }
     JsonUtil_fread(obj, in, callback);
@@ -163,7 +163,7 @@ JsonUtil_write(
 {
     FILE *const out = fopen(fname, "w");
     if (out == NULL) {
-        cutil_log_error("Cannot open file '%s'!\n", fname);
+        cutil_log_error("Cannot open file '%s'", fname);
         return;
     }
     JsonUtil_fwrite(obj, out, callback);

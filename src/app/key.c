@@ -169,7 +169,7 @@ _keyStack_push(struct _keyStack *stack, enum Key key)
         return false;
     }
     if (stack->top == stack->size - 1) {
-        cutil_log_warn("Stack is full\n");
+        cutil_log_warn("Stack is full");
         return false;
     }
     stack->data[++stack->top] = key;
