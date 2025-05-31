@@ -22,6 +22,9 @@ set(SOURCE_FILES
     data/image.c
     data/pixel.c
     net/connection.c
+    net/package.c
+    net/package/settings.c
+    net/package/string.c
     util/json.c
     util/num.c
     util/sys.c
