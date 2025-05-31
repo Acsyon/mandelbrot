@@ -70,7 +70,7 @@ bool
 Json_compare(const Json *lhs, const Json *rhs, bool case_sensitive);
 
 /**
- * Reads element `elem` from `json` interpreted as an int and writes it to
+ * Reads element `elem` from `json` interpreted as a TYPE and writes it to
  * memory pointed to by `ptr`. Returns error code (EXIT_SUCESS or EXIT_FAILURE).
  *
  * @param[in] json Json object to read from
@@ -79,47 +79,15 @@ Json_compare(const Json *lhs, const Json *rhs, bool case_sensitive);
  *
  * @return error code (EXIT_SUCESS or EXIT_FAILURE).
  */
-int
-Json_elem_to_int(const Json *json, const char *elem, int *ptr);
+#define DECLARE_JSON_TO_TYPE_FUNC(TYPE)                                        \
+    int Json_elem_to_##TYPE(const Json *json, const char *elem, TYPE *ptr);
 
-/**
- * Reads element `elem` from `json` interpreted as a uint16_t and writes it to
- * memory pointed to by `ptr`. Returns error code (EXIT_SUCESS or EXIT_FAILURE).
- *
- * @param[in] json Json object to read from
- * @param[in] elem name of element to read
- * @param[out] ptr pointer to memory to write to
- *
- * @return error code (EXIT_SUCESS or EXIT_FAILURE).
- */
-int
-Json_elem_to_uint16_t(const Json *json, const char *elem, uint16_t *ptr);
+DECLARE_JSON_TO_TYPE_FUNC(int)
+DECLARE_JSON_TO_TYPE_FUNC(uint16_t)
+DECLARE_JSON_TO_TYPE_FUNC(size_t)
+DECLARE_JSON_TO_TYPE_FUNC(double)
 
-/**
- * Reads element `elem` from `json` interpreted as a size_t and writes it to
- * memory pointed to by `ptr`. Returns error code (EXIT_SUCESS or EXIT_FAILURE).
- *
- * @param[in] json Json object to read from
- * @param[in] elem name of element to read
- * @param[out] ptr pointer to memory to write to
- *
- * @return error code (EXIT_SUCESS or EXIT_FAILURE).
- */
-int
-Json_elem_to_size_t(const Json *json, const char *elem, size_t *ptr);
-
-/**
- * Reads element `elem` from `json` interpreted as a double and writes it to
- * memory pointed to by `ptr`. Returns error code (EXIT_SUCESS or EXIT_FAILURE).
- *
- * @param[in] json Json object to read from
- * @param[in] elem name of element to read
- * @param[out] ptr pointer to memory to write to
- *
- * @return error code (EXIT_SUCESS or EXIT_FAILURE).
- */
-int
-Json_elem_to_double(const Json *json, const char *elem, double *ptr);
+#undef DECLARE_JSON_TO_TYPE_FUNC
 
 /**
  * Reads element `elem` from `json` interpreted as a string and writes it to
@@ -135,7 +103,7 @@ int
 Json_elem_to_str(const Json *json, const char *elem, char **ptr);
 
 /**
- * Adds int `var` as element with name `elem` to Json object pointed to by
+ * Adds TYPE `var` as element with name `elem` to Json object pointed to by
  * `json`. Returns error code (EXIT_SUCESS or EXIT_FAILURE).
  *
  * @param[in] json Json object to add element to
@@ -144,47 +112,15 @@ Json_elem_to_str(const Json *json, const char *elem, char **ptr);
  *
  * @return error code (EXIT_SUCESS or EXIT_FAILURE).
  */
-int
-Json_add_int(Json *json, const char *elem, int var);
+#define DECLARE_JSON_ADD_TYPE_FUNC(TYPE)                                       \
+    int Json_add_##TYPE(Json *json, const char *elem, TYPE var);
 
-/**
- * Adds uint16_t `var` as element with name `elem` to Json object pointed to by
- * `json`. Returns error code (EXIT_SUCESS or EXIT_FAILURE).
- *
- * @param[in] json Json object to add element to
- * @param[in] elem name of element to add
- * @param[in] var value of element to add
- *
- * @return error code (EXIT_SUCESS or EXIT_FAILURE).
- */
-int
-Json_add_uint16_t(Json *json, const char *elem, uint16_t var);
+DECLARE_JSON_ADD_TYPE_FUNC(int)
+DECLARE_JSON_ADD_TYPE_FUNC(uint16_t)
+DECLARE_JSON_ADD_TYPE_FUNC(size_t)
+DECLARE_JSON_ADD_TYPE_FUNC(double)
 
-/**
- * Adds size_t `var` as element with name `elem` to Json object pointed to by
- * `json`. Returns error code (EXIT_SUCESS or EXIT_FAILURE).
- *
- * @param[in] json Json object to add element to
- * @param[in] elem name of element to add
- * @param[in] var value of element to add
- *
- * @return error code (EXIT_SUCESS or EXIT_FAILURE).
- */
-int
-Json_add_size_t(Json *json, const char *elem, size_t var);
-
-/**
- * Adds double `var` as element with name `elem` to Json object pointed to by
- * `json`. Returns error code (EXIT_SUCESS or EXIT_FAILURE).
- *
- * @param[in] json Json object to add element to
- * @param[in] elem name of element to add
- * @param[in] var value of element to add
- *
- * @return error code (EXIT_SUCESS or EXIT_FAILURE).
- */
-int
-Json_add_double(Json *json, const char *elem, double var);
+#undef DECLARE_JSON_ADD_TYPE_FUNC
 
 /**
  * Adds string `var` as element with name `elem` to Json object pointed to by
