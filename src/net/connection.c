@@ -67,7 +67,7 @@ Connection_bind(uint16_t port)
 
     conn->srv_sock = socket(AF_INET, SOCK_STREAM, 0);
     if (conn->srv_sock == -1) {
-        cutil_log_error("Creation of socket failed\n");
+        cutil_log_error("Creation of socket failed");
         goto err;
     }
 
@@ -84,16 +84,16 @@ Connection_bind(uint16_t port)
 
     const struct sockaddr *const sockaddr = (struct sockaddr *) &conn->srv_addr;
     if (bind(conn->srv_sock, sockaddr, sizeof conn->srv_addr) < 0) {
-        cutil_log_error("Binding socket failed\n");
+        cutil_log_error("Binding socket failed");
         goto err;
     }
 
     if (listen(conn->srv_sock, MAXIMUM_CONNECTIONS) < 0) {
-        cutil_log_error("Listening failed\n");
+        cutil_log_error("Listening failed");
         goto err;
     }
 
-    cutil_log_debug("Server listening on port %" PRIu16 "...\n", port);
+    cutil_log_debug("Server listening on port %" PRIu16 "...", port);
 
     return conn;
 
@@ -111,7 +111,7 @@ Connection_connect(const char *addr, uint16_t port)
 
     conn->srv_sock = socket(AF_INET, SOCK_STREAM, 0);
     if (conn->srv_sock == -1) {
-        cutil_log_error("Creation of socket failed\n");
+        cutil_log_error("Creation of socket failed");
         goto err;
     }
 
@@ -119,17 +119,17 @@ Connection_connect(const char *addr, uint16_t port)
     conn->srv_addr.sin_port = htons(port);
 
     if (inet_pton(AF_INET, addr, &conn->srv_addr.sin_addr) <= 0) {
-        cutil_log_error("Invalid address/Address not supported\n");
+        cutil_log_error("Invalid address/Address not supported");
         goto err;
     }
 
     const struct sockaddr *const sockaddr = (struct sockaddr *) &conn->srv_addr;
     if (connect(conn->srv_sock, sockaddr, sizeof conn->srv_addr) < 0) {
-        cutil_log_error("Connection failed\n");
+        cutil_log_error("Connection failed");
         goto err;
     }
 
-    cutil_log_debug("Established connection to %s:%" PRIu16 "\n", addr, port);
+    cutil_log_debug("Established connection to %s:%" PRIu16, addr, port);
 
     return conn;
 
@@ -142,20 +142,20 @@ void
 Connection_accept(Connection *conn)
 {
     if (conn->type != CONNECTION_TYPE_SERVER) {
-        cutil_log_warn("Only server can accept connetions\n");
+        cutil_log_warn("Only server can accept connetions");
         return;
     }
 
-    cutil_log_debug("Waiting for client to connect...\n");
+    cutil_log_debug("Waiting for client to connect...");
 
     struct sockaddr *const sockaddr = (struct sockaddr *) &conn->clt_addr;
     socklen_t addrlen = sizeof conn->clt_addr;
     conn->clt_sock = accept(conn->srv_sock, sockaddr, &addrlen);
     if (conn->clt_sock < 0) {
-        cutil_log_error("Accept failed\n");
+        cutil_log_error("Accept failed");
     }
 
-    cutil_log_debug("Client connected\n");
+    cutil_log_debug("Client connected");
 }
 
 static int
@@ -193,14 +193,14 @@ Connection_receive(Connection *conn, void *buf, size_t size)
         if (avail == (ssize_t) size) {
             const ssize_t res = recv(sock, buf, size, 0);
             if (res < -1) {
-                cutil_log_error("recv failed or connection closed\n");
+                cutil_log_error("recv failed or connection closed");
             }
             return res;
         } else if (avail == 0) {
-            cutil_log_error("Connection closed by peer\n");
+            cutil_log_error("Connection closed by peer");
             return avail;
         } else if (avail == -1) {
-            cutil_log_error("recv (MSG_PEEK) failed: %i\n", errno);
+            cutil_log_error("recv (MSG_PEEK) failed: %i", errno);
             return avail;
         }
     }
