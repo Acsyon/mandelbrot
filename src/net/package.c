@@ -8,18 +8,19 @@
 /**
  * Size of (additional) buffer in Package
  */
-#define BUFFER_SIZE 64
+#define ADDITIONAL_BUFFER_SIZE 64
 
 /**
- * @brief Internal representation of a Package.
+ * Internal representation of a Package.
  */
 struct Package {
     const PackageType *type; /**< Type, i.e., vtable */
+    uint64_t capacity;       /**< Capacity of `data` */
     uint64_t size;           /**< Size of `data` */
     uint64_t hash;           /**< Hash of `data` */
     void *data;              /**< Buffer for data to be sent/received */
     size_t namelen;          /**< Length of the type name */
-    void *buf;               /**< Buffer for transmission of the type name */
+    void *buf;               /**< Additional buffer */
 };
 
 Package *
@@ -28,11 +29,12 @@ Package_create(const PackageType *type)
     Package *const pkg = malloc(sizeof *pkg);
 
     pkg->type = type;
+    pkg->capacity = UINT64_C(0);
     pkg->size = UINT64_C(0);
     pkg->hash = UINT64_C(0);
     pkg->data = NULL;
-    pkg->namelen = UINT64_C(0);
-    pkg->buf = calloc(BUFFER_SIZE, sizeof(char));
+    pkg->namelen = strlen(type->name) + 1;
+    pkg->buf = malloc(ADDITIONAL_BUFFER_SIZE);
 
     return pkg;
 }
@@ -92,8 +94,8 @@ _package_init_aux(Package *pkg, void *data)
     const PackageType *const type = pkg->type;
     pkg->data = data;
     pkg->size = type->size(pkg->data);
+    pkg->capacity = pkg->size;
     pkg->hash = type->hash(pkg->data);
-    pkg->namelen = strlen(type->name) + 1;
 }
 
 void
@@ -185,6 +187,13 @@ Package_receive(Package *pkg, const Connection *conn)
     }
     RECEIVE(&pkg->hash, sizeof pkg->hash);
     RECEIVE(&pkg->size, sizeof pkg->size);
+    if (pkg->data == NULL) {
+        pkg->data = malloc(pkg->size);
+    }
+    if (pkg->size > pkg->capacity) {
+        pkg->capacity = pkg->size;
+        pkg->data = realloc(pkg->data, pkg->capacity);
+    }
     RECEIVE(pkg->data, pkg->size);
     return true;
 err:
