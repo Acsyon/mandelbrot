@@ -66,8 +66,10 @@ Connection_connect(const char *addr, uint16_t port);
  * Awaits a Connection.
  *
  * @param[in] conn Connection to await connection for
+ *
+ * @return Accept succesful?
  */
-void
+bool
 Connection_accept(Connection *conn);
 
 /**
@@ -76,9 +78,11 @@ Connection_accept(Connection *conn);
  * @param[in] conn Connection to send data via
  * @param[in] buf buffer to send data of
  * @param[in] size number of bytes to send
+ *
+ * @return number of bytes sent
  */
 int64_t
-Connection_send(Connection *conn, const void *buf, size_t size);
+Connection_send(const Connection *conn, const void *buf, size_t size);
 
 /**
  * Receives `size` bytes of data via Connection `conn` and stores it in `buf`.
@@ -86,9 +90,11 @@ Connection_send(Connection *conn, const void *buf, size_t size);
  * @param[in] conn Connection to send data via
  * @param[in] buf buffer to write data to
  * @param[in] size number of bytes to write
+ *
+ * @return number of bytes received
  */
 int64_t
-Connection_receive(Connection *conn, void *buf, size_t size);
+Connection_receive(const Connection *conn, void *buf, size_t size);
 
 /**
  * Returns the ConnectionType of Connection `conn`.

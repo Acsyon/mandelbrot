@@ -2,8 +2,6 @@
 
 #include <pthread.h>
 
-#include <omp.h>
-
 #include <net/connection.h>
 #include <util/sys.h>
 
@@ -153,7 +151,7 @@ _client_thread_function(void *arg)
 }
 
 static void
-_should_sendDataCorrectly_when_acceptConnection(void)
+_should_sendDataCorrectly_when_haveValidConnection(void)
 {
     pthread_t server_thread;
 
@@ -198,7 +196,7 @@ main(void)
     RUN_TEST(_should_failToSetupClientConnection_when_haveNoServerConnection);
     RUN_TEST(_should_setupClientConnectionCorrectly_when_haveServerConnection);
     RUN_TEST(_should_returnTypeCorrectly_when_haveDifferentConnections);
-    RUN_TEST(_should_sendDataCorrectly_when_acceptConnection);
+    RUN_TEST(_should_sendDataCorrectly_when_haveValidConnection);
 
     return UNITY_END();
 }

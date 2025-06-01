@@ -138,12 +138,12 @@ err:
     return NULL;
 }
 
-void
+bool
 Connection_accept(Connection *conn)
 {
     if (conn->type != CONNECTION_TYPE_SERVER) {
         cutil_log_warn("Only server can accept connetions");
-        return;
+        return false;
     }
 
     cutil_log_debug("Waiting for client to connect...");
@@ -153,13 +153,15 @@ Connection_accept(Connection *conn)
     conn->clt_sock = accept(conn->srv_sock, sockaddr, &addrlen);
     if (conn->clt_sock < 0) {
         cutil_log_error("Accept failed");
+        return false;
     }
 
     cutil_log_debug("Client connected");
+    return true;
 }
 
 static int
-_connection_get_other_socket(Connection *conn)
+_connection_get_other_socket(const Connection *conn)
 {
     switch (conn->type) {
     case CONNECTION_TYPE_SERVER:
@@ -172,7 +174,7 @@ _connection_get_other_socket(Connection *conn)
 }
 
 int64_t
-Connection_send(Connection *conn, const void *buf, size_t size)
+Connection_send(const Connection *conn, const void *buf, size_t size)
 {
     if (conn->type == CONNECTION_TYPE_SELF) {
         return INT64_C(0);
@@ -182,7 +184,7 @@ Connection_send(Connection *conn, const void *buf, size_t size)
 }
 
 int64_t
-Connection_receive(Connection *conn, void *buf, size_t size)
+Connection_receive(const Connection *conn, void *buf, size_t size)
 {
     if (conn->type == CONNECTION_TYPE_SELF) {
         return INT64_C(0);
