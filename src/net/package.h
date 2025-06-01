@@ -10,6 +10,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <net/connection.h>
+
 /**
  * vtable for different types of packages
  */
@@ -137,5 +139,29 @@ Package_update(Package *pkg, const void *params);
  */
 bool
 Package_verify(const Package *pkg);
+
+/**
+ * Sends Package via Connection and returns whether transmission was succesful.
+ *
+ * @param[in] pkg Package to send
+ * @param[in] conn Connection to send Package via
+ *
+ * @return was transmission succesful?
+ */
+bool
+Package_send(const Package *pkg, const Connection *conn);
+
+/**
+ * Receives Package via Connection and returns whether transmission was
+ * succesful. The PackageType of `pkg` has to correspond to the received
+ * package to be succesful.
+ *
+ * @param[in, out] pkg Package to write data to
+ * @param[in] conn Connection to send Package via
+ *
+ * @return was transmission succesful?
+ */
+bool
+Package_receive(Package *pkg, const Connection *conn);
 
 #endif /* MANDELBROT_NET_PACKAGE_H_INCLUDED */
