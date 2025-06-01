@@ -7,6 +7,8 @@
 #include <util/json.h>
 #include <util/util.h>
 
+#define PACKAGE_TYPE_NAME "STRING"
+
 static void *
 _init(const void *params)
 {
@@ -34,14 +36,14 @@ _hash_djb33(const void *data)
 }
 
 static const PackageType PACKAGE_TYPE_STRING_OBJECT = {
-  .name = "STRING",
+  .name = PACKAGE_TYPE_NAME,
   .init = &_init,
   .update = NULL,
   .size = &_size,
   .hash = &_hash_djb33,
   .supports_move = true,
 };
-const PackageType *const PACKAGE_TYPE_SETTINGS = &PACKAGE_TYPE_STRING_OBJECT;
+const PackageType *const PACKAGE_TYPE_STRING = &PACKAGE_TYPE_STRING_OBJECT;
 
 Package *
 Package_from_string(char *str)
