@@ -16,6 +16,7 @@ set(TEST_SOURCES
     data/test_chunk.c
     data/test_pixel.c
     net/test_connection.c
+    net/test_package.c
     util/test_json.c
     util/test_num.c
     util/test_sys.c
@@ -61,7 +62,7 @@ foreach (TEST_SOURCE ${TEST_SOURCES})
     else ()
         target_link_libraries("${TEST_NAME}" PRIVATE mpir)
     endif ()
-    target_link_libraries("${TEST_NAME}" PRIVATE SDL2::SDL2 cjson)
+    target_link_libraries("${TEST_NAME}" PRIVATE SDL2::SDL2 cjson cutil)
 endforeach ()
 
 # "check" target that runs the tests
@@ -74,6 +75,7 @@ add_custom_target(
 )
 
 set_target_properties(test_connection PROPERTIES C_STANDARD 11)
+set_target_properties(test_package PROPERTIES C_STANDARD 11)
 
 # Fix cutil test binary locations
 if (TARGET cutil-check)
