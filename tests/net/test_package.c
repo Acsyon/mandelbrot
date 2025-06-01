@@ -1,6 +1,7 @@
 #include "unity.h"
 
-#include <pthread.h>
+#include <threads.h>
+#include <stdlib.h>
 
 #include <net/connection.h>
 #include <net/package.h>
@@ -92,7 +93,7 @@ _should_verifyCorrectly_when_dataIsValid(void)
     Package_free(pkg);
 }
 
-static void *
+static int
 _server_thread_function(void *arg)
 {
     /* Arrange */
@@ -113,10 +114,10 @@ _server_thread_function(void *arg)
     /* Cleanup */
     Package_free(pkg);
 
-    return NULL;
+    return EXIT_SUCCESS;
 }
 
-static void *
+static int
 _client_thread_function(void *arg)
 {
     /* Arrange */
@@ -139,19 +140,19 @@ _client_thread_function(void *arg)
     /* Cleanup */
     Package_free(pkg);
 
-    return NULL;
+    return EXIT_SUCCESS;
 }
 
 static void
 _should_sendDataCorrectly_when_haveValidConnection(void)
 {
-    pthread_t server_thread;
+    thrd_t server_thread;
 
     Connection *const srv_conn = Connection_bind(PORT);
     Connection *const clt_conn = Connection_connect(ADDR, PORT);
 
     /* Start server in a new thread */
-    pthread_create(&server_thread, NULL, &_server_thread_function, srv_conn);
+    thrd_create(&server_thread, &_server_thread_function, srv_conn);
 
     /* Small delay to ensure server starts before client connects */
     msleep(100);
@@ -160,7 +161,7 @@ _should_sendDataCorrectly_when_haveValidConnection(void)
     _client_thread_function(clt_conn);
 
     /* Wait for server to finish */
-    pthread_join(server_thread, NULL);
+    thrd_join(server_thread, NULL);
 
     /* Cleanup */
     Connection_close(srv_conn);

@@ -1,6 +1,7 @@
 #include "unity.h"
 
-#include <pthread.h>
+#include <threads.h>
+#include <stdlib.h>
 
 #include <net/connection.h>
 #include <util/sys.h>
@@ -101,7 +102,7 @@ _should_returnTypeCorrectly_when_haveDifferentConnections(void)
     Connection_close(clt_conn);
 }
 
-static void *
+static int
 _server_thread_function(void *arg)
 {
     /* Arrange */
@@ -123,10 +124,10 @@ _server_thread_function(void *arg)
     TEST_ASSERT_EQUAL_INT64(sizeof buf_srv, rcv_srv);
     TEST_ASSERT_EQUAL_size_t(data_clt, buf_srv);
 
-    return NULL;
+    return EXIT_SUCCESS;
 }
 
-static void *
+static int
 _client_thread_function(void *arg)
 {
     /* Arrange */
@@ -147,19 +148,19 @@ _client_thread_function(void *arg)
     TEST_ASSERT_EQUAL_INT64(sizeof data_clt, snd_clt);
     TEST_ASSERT_EQUAL_size_t(data_srv, buf_clt);
 
-    return NULL;
+    return EXIT_SUCCESS;
 }
 
 static void
 _should_sendDataCorrectly_when_haveValidConnection(void)
 {
-    pthread_t server_thread;
+    thrd_t server_thread;
 
     Connection *const srv_conn = Connection_bind(PORT);
     Connection *const clt_conn = Connection_connect(ADDR, PORT);
 
     /* Start server in a new thread */
-    pthread_create(&server_thread, NULL, &_server_thread_function, srv_conn);
+    thrd_create(&server_thread, &_server_thread_function, srv_conn);
 
     /* Small delay to ensure server starts before client connects */
     msleep(100);
@@ -168,7 +169,7 @@ _should_sendDataCorrectly_when_haveValidConnection(void)
     _client_thread_function(clt_conn);
 
     /* Wait for server to finish */
-    pthread_join(server_thread, NULL);
+    thrd_join(server_thread, NULL);
 
     /* Cleanup */
     Connection_close(srv_conn);
