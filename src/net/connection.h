@@ -118,4 +118,16 @@ Connection_get_type(const Connection *conn);
 bool
 Connection_set_reuse_address(bool reuse_address);
 
+/**
+ * Prepares stuff before any connection can be used (only for Windows).
+ */
+void
+connection_global_startup(void);
+
+/**
+ * Cleanes up stuff after any connection has been closed (only for Windows).
+ */
+void
+connection_global_cleanup(void);
+
 #endif /* MANDELBROT_NET_CONNECTION_H_INCLUDED */

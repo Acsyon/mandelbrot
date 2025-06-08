@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 #if defined(_WIN32) || defined(WIN32)
+    #define WINSOCK_VERSION MAKEWORD(2, 2)
     #include <winsock2.h>
     #include <Ws2tcpip.h>
     typedef int ssize_t;
@@ -230,4 +231,21 @@ Connection_set_reuse_address(bool reuse_address)
     const bool old_val = _reuse_address;
     _reuse_address = reuse_address;
     return old_val;
+}
+
+void
+connection_global_startup(void)
+{
+#if defined(_WIN32) || defined(WIN32)
+    WSADATA data;
+    WSAStartup(WINSOCK_VERSION, &data);
+#endif
+}
+
+void
+connection_global_cleanup(void)
+{
+#if defined(_WIN32) || defined(WIN32)
+    WSACleanup();
+#endif
 }

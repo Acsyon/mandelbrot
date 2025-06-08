@@ -187,6 +187,8 @@ tearDown(void)
 int
 main(void)
 {
+    connection_global_startup();
+
     Connection_set_reuse_address(true);
 
     UNITY_BEGIN();
@@ -198,6 +200,8 @@ main(void)
     RUN_TEST(_should_setupClientConnectionCorrectly_when_haveServerConnection);
     RUN_TEST(_should_returnTypeCorrectly_when_haveDifferentConnections);
     RUN_TEST(_should_sendDataCorrectly_when_haveValidConnection);
+
+    connection_global_cleanup();
 
     return UNITY_END();
 }
