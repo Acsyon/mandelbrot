@@ -5,17 +5,17 @@
 #include <stdlib.h>
 
 #if defined(_WIN32) || defined(WIN32)
-    #define WINSOCK_VERSION MAKEWORD(2, 2)
-    #include <winsock2.h>
     #include <Ws2tcpip.h>
-    typedef int ssize_t;
+    #include <winsock2.h>
+    #define WINSOCK_VERSION MAKEWORD(2, 2)
     #define close closesocket
+typedef int ssize_t;
 #else
-    #include <unistd.h>
     #include <arpa/inet.h>
     #include <sys/socket.h>
-    typedef int SOCKET;
+    #include <unistd.h>
     #define INVALID_SOCKET -1
+typedef int SOCKET;
 #endif
 
 #include <cutil/log.h>

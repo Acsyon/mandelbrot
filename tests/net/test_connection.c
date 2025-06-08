@@ -1,13 +1,15 @@
 #include "unity.h"
 
-#include <threads.h>
 #include <stdlib.h>
+#include <threads.h>
 
 #include <net/connection.h>
 #include <util/sys.h>
 
 #define ADDR "127.0.0.1"
 #define PORT UINT16_C(12345)
+
+typedef int64_t I64;
 
 static void
 _should_setupSelfConnection_when_callConstructor(void)
@@ -114,10 +116,8 @@ _server_thread_function(void *arg)
     size_t buf_srv;
 
     /* Act */
-    const int64_t snd_srv
-      = Connection_send(srv_conn, &data_srv, sizeof data_srv);
-    const int64_t rcv_srv
-      = Connection_receive(srv_conn, &buf_srv, sizeof buf_srv);
+    const I64 snd_srv = Connection_send(srv_conn, &data_srv, sizeof data_srv);
+    const I64 rcv_srv = Connection_receive(srv_conn, &buf_srv, sizeof buf_srv);
 
     /* Assert */
     TEST_ASSERT_EQUAL_INT64(sizeof data_srv, snd_srv);
@@ -138,10 +138,8 @@ _client_thread_function(void *arg)
     size_t buf_clt;
 
     /* Act */
-    const int64_t rcv_clt
-      = Connection_receive(clt_conn, &buf_clt, sizeof buf_clt);
-    const int64_t snd_clt
-      = Connection_send(clt_conn, &data_clt, sizeof data_clt);
+    const I64 rcv_clt = Connection_receive(clt_conn, &buf_clt, sizeof buf_clt);
+    const I64 snd_clt = Connection_send(clt_conn, &data_clt, sizeof data_clt);
 
     /* Assert */
     TEST_ASSERT_EQUAL_INT64(sizeof buf_clt, rcv_clt);
