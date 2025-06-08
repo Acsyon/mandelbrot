@@ -89,10 +89,10 @@ _should_invalidateAllPixels_when_callInvalidateAllPixels(void)
         for (int idx_px_im = 0; idx_px_im < chunks.params.num_px_im;
              ++idx_px_im)
         {
-            const PixelData *const px
+            const PixelData *const px2
               = &chunk->data[idx_px_re * chunks.params.stride + idx_px_im];
-            TEST_ASSERT_EQUAL_INT(PIXEL_STATE_INVALID, px->state);
-            TEST_ASSERT_EQUAL_FLOAT(PALETTE_INVALID_POS, px->itrs);
+            TEST_ASSERT_EQUAL_INT(PIXEL_STATE_INVALID, px2->state);
+            TEST_ASSERT_EQUAL_FLOAT(PALETTE_INVALID_POS, px2->itrs);
         }
     }
 
@@ -157,10 +157,10 @@ _should_resetChunkCorrectly_when_callResetCallback(void)
         for (int idx_px_im = 0; idx_px_im < chunks.params.num_px_im;
              ++idx_px_im)
         {
-            const PixelData *const px
+            const PixelData *const px2
               = &chunk->data[idx_px_re * chunks.params.stride + idx_px_im];
-            TEST_ASSERT_EQUAL_INT(PIXEL_STATE_INVALID, px->state);
-            TEST_ASSERT_EQUAL_FLOAT(PALETTE_INVALID_POS, px->itrs);
+            TEST_ASSERT_EQUAL_INT(PIXEL_STATE_INVALID, px2->state);
+            TEST_ASSERT_EQUAL_FLOAT(PALETTE_INVALID_POS, px2->itrs);
         }
     }
 

@@ -4,11 +4,20 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
-#include <unistd.h>
+#if defined(_WIN32) || defined(WIN32)
+    #include <winsock2.h>
+    #include <Ws2tcpip.h>
+    typedef int ssize_t;
+    #define close closesocket
+#else
+    #include <unistd.h>
+    #include <arpa/inet.h>
+    #include <sys/socket.h>
+    typedef int SOCKET;
+    #define INVALID_SOCKET -1
+#endif
 
-#include <arpa/inet.h>
 #include <cutil/log.h>
-#include <sys/socket.h>
 
 #define MAXIMUM_CONNECTIONS 1
 
@@ -16,9 +25,9 @@ static bool _reuse_address = false;
 
 struct Connection {
     enum ConnectionType type;
-    int srv_sock;
+    SOCKET srv_sock;
     struct sockaddr_in srv_addr;
-    int clt_sock;
+    SOCKET clt_sock;
     struct sockaddr_in clt_addr;
 };
 
@@ -27,9 +36,9 @@ _connection_calloc(void)
 {
     Connection *const conn = malloc(sizeof *conn);
 
-    conn->srv_sock = -1;
+    conn->srv_sock = INVALID_SOCKET;
     conn->srv_addr = (struct sockaddr_in) {0};
-    conn->clt_sock = -1;
+    conn->clt_sock = INVALID_SOCKET;
     conn->clt_addr = (struct sockaddr_in) {0};
 
     return conn;
@@ -66,7 +75,7 @@ Connection_bind(uint16_t port)
     conn->type = CONNECTION_TYPE_SERVER;
 
     conn->srv_sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (conn->srv_sock == -1) {
+    if (conn->srv_sock == INVALID_SOCKET) {
         cutil_log_error("Creation of socket failed");
         goto err;
     }
@@ -110,7 +119,7 @@ Connection_connect(const char *addr, uint16_t port)
     conn->type = CONNECTION_TYPE_CLIENT;
 
     conn->srv_sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (conn->srv_sock == -1) {
+    if (conn->srv_sock == INVALID_SOCKET) {
         cutil_log_error("Creation of socket failed");
         goto err;
     }
@@ -160,7 +169,7 @@ Connection_accept(Connection *conn)
     return true;
 }
 
-static int
+static SOCKET
 _connection_get_other_socket(const Connection *conn)
 {
     switch (conn->type) {
@@ -169,7 +178,7 @@ _connection_get_other_socket(const Connection *conn)
     case CONNECTION_TYPE_CLIENT:
         return conn->srv_sock;
     default:
-        return -1;
+        return INVALID_SOCKET;
     }
 }
 
@@ -179,7 +188,7 @@ Connection_send(const Connection *conn, const void *buf, size_t size)
     if (conn->type == CONNECTION_TYPE_SELF) {
         return INT64_C(0);
     }
-    const int sock = _connection_get_other_socket(conn);
+    const SOCKET sock = _connection_get_other_socket(conn);
     return send(sock, buf, size, 0);
 }
 
@@ -189,7 +198,7 @@ Connection_receive(const Connection *conn, void *buf, size_t size)
     if (conn->type == CONNECTION_TYPE_SELF) {
         return INT64_C(0);
     }
-    const int sock = _connection_get_other_socket(conn);
+    const SOCKET sock = _connection_get_other_socket(conn);
     for (;;) {
         const ssize_t avail = recv(sock, buf, size, MSG_PEEK);
         if (avail == (ssize_t) size) {

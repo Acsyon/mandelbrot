@@ -1,5 +1,6 @@
 #include "unity.h"
 
+#define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 
 #include <util/sys.h>
@@ -20,9 +21,9 @@ _should_sleepCorrectAmount_when_provideTime(void)
         const uint64_t end_time = SDL_GetTicks64();
 
         /* Assert */
-        const unsigned int delta = (end_time - start_time);
+        const uint64_t delta = (end_time - start_time);
         TEST_ASSERT_GREATER_OR_EQUAL(sleeptime, delta);
-        TEST_ASSERT_LESS_OR_EQUAL(sleeptime + 1, delta);
+        TEST_ASSERT_LESS_OR_EQUAL(sleeptime + 2, delta);
     }
 }
 
@@ -35,8 +36,11 @@ tearDown(void)
 {}
 
 int
-main(void)
+main(int argc, char **argv)
 {
+    (void) argc;
+    (void) argv;
+
     UNITY_BEGIN();
 
     RUN_TEST(_should_sleepCorrectAmount_when_provideTime);

@@ -12,7 +12,8 @@ _should_readFileToString_when_callUtilFileToStr(void)
 {
     /* Arrange */
     FILE *const file = tmpfile();
-    fprintf(file, "test_content");
+    const char *const str = "test_content\n";
+    fprintf(file, str);
     rewind(file);
 
     /* Act */
@@ -20,7 +21,7 @@ _should_readFileToString_when_callUtilFileToStr(void)
 
     /* Assert */
     TEST_ASSERT_NOT_NULL(result);
-    TEST_ASSERT_EQUAL_STRING("test_content", result);
+    TEST_ASSERT_EQUAL_STRING(str, result);
 
     /* Cleanup */
     free(result);

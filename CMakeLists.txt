@@ -41,11 +41,13 @@ if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
     string(APPEND CMAKE_C_FLAGS " /W4")
     string(APPEND CMAKE_C_FLAGS_RELEASE " /O2")
     string(APPEND CMAKE_C_FLAGS_RELEASE " /DNDEBUG")
-    string(APPEND CMAKE_C_FLAGS_RELEASE " /MT")
+    string(APPEND CMAKE_C_FLAGS_RELEASE " /MD")
+    string(APPEND CMAKE_EXE_LINKER_FLAGS_RELEASE " /NODEFAULTLIB:LIBCMT.lib /NODEFAULTLIB:MSVCRTD.lib")
     string(APPEND CMAKE_C_FLAGS_DEBUG " /WX")
     string(APPEND CMAKE_C_FLAGS_DEBUG " /Od")
     string(APPEND CMAKE_C_FLAGS_DEBUG " /Zi")
-    string(APPEND CMAKE_C_FLAGS_DEBUG " /MTd")
+    string(APPEND CMAKE_C_FLAGS_DEBUG " /MDd")
+    string(APPEND CMAKE_EXE_LINKER_FLAGS_DEBUG " /NODEFAULTLIB:LIBCMT.lib")
     string(APPEND CMAKE_C_FLAGS_RELWITHDEBINFO " ${CMAKE_C_FLAGS_RELEASE}")
     string(APPEND CMAKE_C_FLAGS_RELWITHDEBINFO " /Zi")
 endif ()
@@ -78,6 +80,11 @@ set(AUXILIARY_STATIC_LIBRARY "auxlib")
 
 # Include unity already here to prevent cutil submodule from being chosen
 if (ENABLE_TESTS)
+    # Treating warnings as errors would prevent compilation for MSVC
+    if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+        string(REPLACE " /WX" "" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
+    endif ()
+
     # Include unity subdirectory
     add_subdirectory(submodules/Unity unity EXCLUDE_FROM_ALL)
 
@@ -86,6 +93,10 @@ if (ENABLE_TESTS)
         unity PROPERTIES ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
                          LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     )
+
+    if (CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+        string(APPEND CMAKE_C_FLAGS_DEBUG " /WX")
+    endif ()
 endif ()
 
 # Add the source directory

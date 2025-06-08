@@ -38,9 +38,9 @@ inline struct ARGB
 float_to_ARGB(float r, float g, float b)
 {
     struct ARGB rgb = {0};
-    rgb.r = r * UINT8_MAX;
-    rgb.g = g * UINT8_MAX;
-    rgb.b = b * UINT8_MAX;
+    rgb.r = (uint8_t) (r * UINT8_MAX);
+    rgb.g = (uint8_t) (g * UINT8_MAX);
+    rgb.b = (uint8_t) (b * UINT8_MAX);
     return rgb;
 }
 
@@ -57,13 +57,13 @@ u32_to_ARGB(uint32_t u)
 {
     uint32_t tmp = u;
     struct ARGB rgb = {0};
-    rgb.a = (tmp / UINT32_C(0x01000000));
+    rgb.a = (uint8_t) (tmp / UINT32_C(0x01000000));
     tmp = tmp % 0x01000000;
-    rgb.r = (tmp / UINT32_C(0x00010000));
+    rgb.r = (uint8_t) (tmp / UINT32_C(0x00010000));
     tmp = tmp % 0x00010000;
-    rgb.g = (tmp / UINT32_C(0x00000100));
+    rgb.g = (uint8_t) (tmp / UINT32_C(0x00000100));
     tmp = tmp % 0x00000100;
-    rgb.b = (tmp / UINT32_C(0x00000001));
+    rgb.b = (uint8_t) (tmp / UINT32_C(0x00000001));
     return rgb;
 }
 
@@ -110,7 +110,7 @@ inline struct AHSV
 float_to_AHSV(float h, float s, float v)
 {
     struct AHSV hsv = {0};
-    hsv.h = h * HSV_H_MAX;
+    hsv.h = (uint16_t) (h * HSV_H_MAX);
     hsv.s = s;
     hsv.v = v;
     return hsv;

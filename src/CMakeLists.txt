@@ -144,7 +144,7 @@ if (MANDELBROT_DISTRIBUTED)
         set(MPIR_BUILD_VC_DIR "${CMAKE_SOURCE_DIR}/submodules/mpir/msvc/vs22")
 
         # Path of the Windows build output
-        set(MIPR_OUT_DIR
+        set(MPIR_OUT_DIR
             "${CMAKE_SOURCE_DIR}/submodules/mpir/lib/${MPIR_PLATFORM}/${MPIR_BUILD_TYPE}"
         )
 
@@ -152,12 +152,12 @@ if (MANDELBROT_DISTRIBUTED)
             OUTPUT "${MPIR_LIB_TO_USE}" "${MPIR_HEADER_FILE}"
             COMMAND msbuild.bat gc LIB ${MPIR_PLATFORM} ${MPIR_BUILD_TYPE}
             WORKING_DIRECTORY "${MPIR_BUILD_VC_DIR}"
-            COMMENT "Building MPIR for ${MPIR_PLATFORM} platform"
+            COMMAND ${CMAKE_COMMAND} -E copy
+            ${MPIR_OUT_DIR}/mpir.lib ${MPIR_LIB_TO_USE}
+            COMMAND ${CMAKE_COMMAND} -E copy
+            ${MPIR_OUT_DIR}/gmp.h ${MPIR_HEADER_FILE}
+            COMMENT "Building MPIR for ${MPIR_PLATFORM} platform and copy files to proper directory"
         )
-
-        # Copy files to proper directory
-        file(COPY "${MIPR_OUT_DIR}/mpir.lib" DESTINATION "${MPIR_LIB_DIR}")
-        file(COPY "${MIPR_OUT_DIR}/gmp.h" DESTINATION "${MPIR_INCLUDE_DIR}")
 
         add_custom_target(mpir_submodule ALL DEPENDS "${MPIR_LIB_TO_USE}" "${MPIR_HEADER_FILE}")
 

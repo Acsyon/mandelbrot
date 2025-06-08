@@ -60,9 +60,9 @@ foreach (TEST_SOURCE ${TEST_SOURCES})
     if (NOT WIN32)
         target_link_libraries("${TEST_NAME}" PRIVATE gmp)
     else ()
-        target_link_libraries("${TEST_NAME}" PRIVATE mpir)
+        target_link_libraries("${TEST_NAME}" PRIVATE mpir Ws2_32.lib)
     endif ()
-    target_link_libraries("${TEST_NAME}" PRIVATE SDL2::SDL2 cjson cutil)
+    target_link_libraries("${TEST_NAME}" PRIVATE SDL2::SDL2 cjson cutil-static)
 endforeach ()
 
 # "check" target that runs the tests

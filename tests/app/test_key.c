@@ -1,5 +1,6 @@
 #include "unity.h"
 
+#define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 
 #include <app/key.h>
@@ -227,8 +228,11 @@ tearDown(void)
 {}
 
 int
-main(void)
+main(int argc, char **argv)
 {
+    (void) argc;
+    (void) argv;
+    
     UNITY_BEGIN();
 
     RUN_TEST(_should_returnCorrectCooldown_when_provideKey);
