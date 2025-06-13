@@ -1,13 +1,13 @@
 #include "unity.h"
 
 #include <threads.h>
-#include <stdlib.h>
 
+#include <cutil/std/stdlib.h>
+#include <cutil/std/string.h>
 #include <net/connection.h>
 #include <net/package.h>
 #include <net/package/string.h>
 #include <util/sys.h>
-#include <util/util.h>
 
 #define ADDR "127.0.0.1"
 #define PORT UINT16_C(12345)
@@ -58,7 +58,7 @@ static void
 _should_initStringData_when_useMoveInit(void)
 {
     /* Arrange */
-    char *const assert_str = Util_strdup(ASSERT_STR);
+    char *const assert_str = cutil_strdup(ASSERT_STR);
     const uint64_t assert_size = sizeof ASSERT_STR;
     const PackageType *const type = PACKAGE_TYPE_STRING;
     Package *const pkg = Package_create(type);

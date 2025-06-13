@@ -7,9 +7,10 @@
 #ifndef MANDELBROT_NET_CONNECTION_H_INCLUDED
 #define MANDELBROT_NET_CONNECTION_H_INCLUDED
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+
+#include <cutil/std/stdbool.h>
 
 /**
  * Enumerator for different types of connections

@@ -2,7 +2,6 @@
 
 #include <errno.h>
 #include <inttypes.h>
-#include <stdlib.h>
 
 #if defined(_WIN32) || defined(WIN32)
     #include <Ws2tcpip.h>
@@ -18,7 +17,9 @@ typedef int ssize_t;
 typedef int SOCKET;
 #endif
 
-#include <cutil/log.h>
+#include <cutil/io/log.h>
+#include <cutil/std/stdlib.h>
+#include <cutil/util/macro.h>
 
 #define MAXIMUM_CONNECTIONS 1
 
@@ -48,9 +49,7 @@ _connection_calloc(void)
 void
 Connection_close(Connection *conn)
 {
-    if (conn == NULL) {
-        return;
-    }
+    CUTIL_RETURN_IF_NULL(conn);
 
     close(conn->srv_sock);
     close(conn->clt_sock);

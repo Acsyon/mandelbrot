@@ -1,7 +1,8 @@
 #include "unity.h"
 
-#include <stdlib.h>
 #include <threads.h>
+
+#include <cutil/std/stdlib.h>
 
 #include <net/connection.h>
 #include <util/sys.h>

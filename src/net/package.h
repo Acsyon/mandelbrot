@@ -7,8 +7,9 @@
 #ifndef MANDELBROT_NET_PACKAGE_H_INCLUDED
 #define MANDELBROT_NET_PACKAGE_H_INCLUDED
 
-#include <stdbool.h>
 #include <stdint.h>
+
+#include <cutil/std/stdbool.h>
 
 #include <net/connection.h>
 

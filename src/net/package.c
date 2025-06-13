@@ -1,9 +1,9 @@
 #include <net/package.h>
 
-#include <stdlib.h>
-#include <string.h>
-
-#include <cutil/log.h>
+#include <cutil/io/log.h>
+#include <cutil/std/stdlib.h>
+#include <cutil/std/string.h>
+#include <cutil/util/macro.h>
 
 /**
  * Size of (additional) buffer in Package
@@ -42,9 +42,7 @@ Package_create(const PackageType *type)
 void
 Package_free(Package *pkg)
 {
-    if (pkg == NULL) {
-        return;
-    }
+    CUTIL_RETURN_IF_NULL(pkg);
 
     free(pkg->data);
     free(pkg->buf);

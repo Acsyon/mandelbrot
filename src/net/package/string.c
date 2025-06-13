@@ -1,18 +1,16 @@
 #include <net/package/string.h>
 
-#include <string.h>
-
-#include <cutil/log.h>
+#include <cutil/io/log.h>
+#include <cutil/std/string.h>
 
 #include <util/json.h>
-#include <util/util.h>
 
 #define PACKAGE_TYPE_NAME "STRING"
 
 static void *
 _init(const void *params)
 {
-    return Util_strdup(params);
+    return cutil_strdup(params);
 }
 
 static uint64_t

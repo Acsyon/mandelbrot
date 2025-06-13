@@ -1,8 +1,8 @@
 #include <net/package/settings.h>
 
-#include <stdlib.h>
-
-#include <cutil/log.h>
+#include <cutil/io/log.h>
+#include <cutil/std/stdlib.h>
+#include <cutil/util/macro.h>
 
 #include <net/package/string.h>
 
@@ -18,8 +18,6 @@ void
 Package_to_settings(const Package *pkg, Settings *settings)
 {
     const char *const str = Package_to_string(pkg);
-    if (str == NULL) {
-        return;
-    }
+    CUTIL_RETURN_IF_NULL(str);
     JsonUtil_fill_from_string(settings, str, &Settings_fill_from_Json_void);
 }
