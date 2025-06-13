@@ -7,11 +7,12 @@
 #ifndef MANDELBROT_UTIL_JSON_H_INCLUDED
 #define MANDELBROT_UTIL_JSON_H_INCLUDED
 
+#include <stdint.h>
+
 #include <cjson/cJSON.h>
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
+#include <cutil/std/stdbool.h>
+#include <cutil/std/stdio.h>
 
 /**
  * JSON object type (wrapper around cJSON)

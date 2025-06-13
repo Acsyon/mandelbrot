@@ -1,33 +1,15 @@
-#include "util.h"
+#include <util/util.h>
 
-#include <math.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <cutil/log.h>
-#include <cutil/stringbuilder.h>
-
-char *
-Util_strdup(const char *str)
-{
-    if (str == NULL) {
-        return NULL;
-    }
-
-    const size_t len = strlen(str) + 1;
-    char *cpy = malloc(len);
-    cpy = memcpy(cpy, str, len);
-
-    return cpy;
-}
+#include <cutil/io/log.h>
+#include <cutil/std/math.h>
+#include <cutil/std/stdlib.h>
+#include <cutil/string/builder.h>
+#include <cutil/util/macro.h>
 
 char *
 Util_file_to_str(FILE *in)
 {
-    if (in == NULL) {
-        return NULL;
-    }
+    CUTIL_RETURN_NULL_IF_NULL(in);
 
     fseek(in, 0L, SEEK_END);
     const long fsize = ftell(in) + 1;
@@ -91,7 +73,7 @@ Util_calculate_new_prec(mpf_srcptr upp)
     static const mp_bitcnt_t MAX_DIFF = GMP_LIMB_BITS / 4;
 
     long int exp = 0;
-    (void) mpf_get_d_2exp(&exp, upp);
+    CUTIL_UNUSED(mpf_get_d_2exp(&exp, upp));
     exp = labs(exp);
 
     const mp_bitcnt_t new_prec

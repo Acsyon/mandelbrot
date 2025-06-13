@@ -1,8 +1,7 @@
-#include "num.h"
+#include <util/num.h>
 
-#include <math.h>
-
-#include <cutil/log.h>
+#include <cutil/io/log.h>
+#include <cutil/std/math.h>
 
 #define DEFINE_INLINE_FUNC_LERP_SINGLE_GENERIC(TYPE)                           \
     static inline TYPE _inline_lerp_single_##TYPE(                             \

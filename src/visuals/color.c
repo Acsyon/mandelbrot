@@ -1,6 +1,6 @@
-#include "color.h"
+#include <visuals/color.h>
 
-#include <math.h>
+#include <cutil/std/math.h>
 
 extern inline struct ARGB
 float_to_ARGB(float r, float g, float b);

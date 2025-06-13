@@ -1,6 +1,6 @@
 #include "unity.h"
 
-#include <stdlib.h>
+#include <cutil/std/stdlib.h>
 
 #include <app/settings.h>
 #include <data/chunk.h>

@@ -1,12 +1,12 @@
-#include <stdlib.h>
-
-#include <cutil/log.h>
+#include <cutil/io/log.h>
 #include <cutil/posix/getopt.h>
-#include <cutil/stringbuilder.h>
+#include <cutil/std/stdlib.h>
+#include <cutil/std/string.h>
+#include <cutil/string/builder.h>
+#include <cutil/util/macro.h>
 
 #include <app/app.h>
 #include <app/settings.h>
-#include <util/util.h>
 
 #define DEFAULT_SETTINGS_FILENAME "settings.json"
 
@@ -115,13 +115,13 @@ _get_env(int argc, char **argv)
             printf("%s", USAGE);
             exit(EXIT_SUCCESS);
         case 'e': /* env_path */
-            env->path = Util_strdup(cutil_optarg);
+            env->path = cutil_strdup(cutil_optarg);
             break;
         case 'l': /* load */
-            env->load = Util_strdup(cutil_optarg);
+            env->load = cutil_strdup(cutil_optarg);
             break;
         case 's': /* save */
-            env->save = Util_strdup(cutil_optarg);
+            env->save = cutil_strdup(cutil_optarg);
             break;
         default: /* bullshit or longopts only */
             if (c >= LONGOPTS_ONLY_START_IDX && c <= LONGOPTS_ONLY_END_IDX) {
@@ -138,9 +138,7 @@ _get_env(int argc, char **argv)
 static void
 _env_free(struct _env *env)
 {
-    if (env == NULL) {
-        return;
-    }
+    CUTIL_RETURN_IF_NULL(env);
 
     free(env->path);
     free(env->load);
@@ -219,7 +217,7 @@ _get_settings(const struct _env *env, int argc, char **argv)
             settings->trip_mode = atoi(cutil_optarg);
             break;
         case VIEW_FILE_IDX: /* view_file */
-            settings->view_file = Util_strdup(cutil_optarg);
+            settings->view_file = cutil_strdup(cutil_optarg);
             break;
         default: /* anything else has been handled before */
             break;

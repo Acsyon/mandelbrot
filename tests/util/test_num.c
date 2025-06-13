@@ -1,6 +1,6 @@
 #include "unity.h"
 
-#include <math.h>
+#include <cutil/std/math.h>
 
 #include <util/num.h>
 

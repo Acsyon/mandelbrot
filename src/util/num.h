@@ -7,7 +7,7 @@
 #ifndef MANDELBROT_UTIL_NUM_H_INCLUDED
 #define MANDELBROT_UTIL_NUM_H_INCLUDED
 
-#include <stdlib.h>
+#include <cutil/std/stdlib.h>
 
 /**
  * Performs a linear interpolation between the points (x0, y0) and (x1, y1),

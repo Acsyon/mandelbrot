@@ -1,7 +1,7 @@
 #include "unity.h"
 
-#include <stdlib.h>
-#include <string.h>
+#include <cutil/std/stdlib.h>
+#include <cutil/std/string.h>
 
 #include <util/json.h>
 

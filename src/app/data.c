@@ -1,10 +1,10 @@
-#include "data.h"
+#include <app/data.h>
 
-#include <stdlib.h>
+#include <cutil/std/stdlib.h>
+#include <cutil/util/macro.h>
 
-#include "app.h"
-#include "settings.h"
-
+#include <app/app.h>
+#include <app/settings.h>
 #include <data/image.h>
 
 struct GraphicsData {
@@ -35,9 +35,7 @@ GraphicsData_app_init(void)
 void
 GraphicsData_free(GraphicsData *gfxdata)
 {
-    if (gfxdata == NULL) {
-        return;
-    }
+    CUTIL_RETURN_IF_NULL(gfxdata);
 
     ImageData_free(gfxdata->imgdata);
 

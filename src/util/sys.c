@@ -1,6 +1,6 @@
-#include "sys.h"
+#include <util/sys.h>
 
-#include <stdio.h>
+#include <cutil/std/stdio.h>
 
 #if _POSIX_C_SOURCE >= 199309L
     #include <time.h>

@@ -1,4 +1,4 @@
-#include "pixel.h"
+#include <data/pixel.h>
 
 #include <visuals/palette.h>
 

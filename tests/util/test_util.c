@@ -1,41 +1,11 @@
 #include "unity.h"
 
-#include <stdlib.h>
-#include <string.h>
-
 #include <gmp.h>
 
+#include <cutil/std/stdlib.h>
+#include <cutil/std/string.h>
+
 #include <util/util.h>
-
-static void
-_should_duplicateString_when_callUtilStrdup(void)
-{
-    /* Arrange */
-    const char *const str = "test_string";
-
-    /* Act */
-    char *const result = Util_strdup(str);
-
-    /* Assert */
-    TEST_ASSERT_NOT_NULL(result);
-    TEST_ASSERT_EQUAL_STRING(str, result);
-
-    /* Cleanup */
-    free(result);
-}
-
-static void
-_should_returnNull_when_callUtilStrdupWithNullInput(void)
-{
-    /* Arrange */
-    const char *const str = NULL;
-
-    /* Act */
-    char *const result = Util_strdup(str);
-
-    /* Assert */
-    TEST_ASSERT_NULL(result);
-}
 
 static void
 _should_readFileToString_when_callUtilFileToStr(void)
@@ -117,8 +87,6 @@ main(void)
 {
     UNITY_BEGIN();
 
-    RUN_TEST(_should_duplicateString_when_callUtilStrdup);
-    RUN_TEST(_should_returnNull_when_callUtilStrdupWithNullInput);
     RUN_TEST(_should_readFileToString_when_callUtilFileToStr);
     RUN_TEST(_should_returnNull_when_callUtilFileToStrWithInvalidFile);
     RUN_TEST(_should_convertMpfToString_when_callUtilMpfToStrBase10);

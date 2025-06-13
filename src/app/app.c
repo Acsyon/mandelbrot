@@ -1,14 +1,13 @@
-#include "app.h"
-
-#include <stdlib.h>
-#include <string.h>
+#include <app/app.h>
 
 #include <SDL2/SDL.h>
 
-#include <cutil/log.h>
+#include <cutil/io/log.h>
+#include <cutil/std/stdlib.h>
+#include <cutil/std/string.h>
+#include <cutil/util/macro.h>
 
 #include <app/video.h>
-#include <util/util.h>
 
 static const char *const DEFAULT_ENVIRONMENT_PATH = "../env/";
 
@@ -29,7 +28,7 @@ _app_create(const char *env_path, const Settings *settings)
 
     _app = calloc(1, sizeof *_app);
 
-    _app->env_path = Util_strdup(env_path);
+    _app->env_path = cutil_strdup(env_path);
     _app->settings = Settings_duplicate(settings);
     _app->gfxdata = GraphicsData_app_init();
     _app->video = Video_app_init();
@@ -38,9 +37,7 @@ _app_create(const char *env_path, const Settings *settings)
 static void
 _app_free(void)
 {
-    if (_app == NULL) {
-        return;
-    }
+    CUTIL_RETURN_IF_NULL(_app);
 
     free(_app->env_path);
     Settings_free(_app->settings);
@@ -75,35 +72,27 @@ App_run(const char *env_path, const Settings *settings)
 const char *
 App_get_env_path(void)
 {
-    if (_app == NULL) {
-        return NULL;
-    }
+    CUTIL_RETURN_NULL_IF_NULL(_app);
     return _app->env_path;
 }
 
 const Settings *
 App_get_settings(void)
 {
-    if (_app == NULL) {
-        return NULL;
-    }
+    CUTIL_RETURN_NULL_IF_NULL(_app);
     return _app->settings;
 }
 
 GraphicsData *
 App_get_graphics_data(void)
 {
-    if (_app == NULL) {
-        return NULL;
-    }
+    CUTIL_RETURN_NULL_IF_NULL(_app);
     return _app->gfxdata;
 }
 
 Video *
 App_get_video(void)
 {
-    if (_app == NULL) {
-        return NULL;
-    }
+    CUTIL_RETURN_NULL_IF_NULL(_app);
     return _app->video;
 }

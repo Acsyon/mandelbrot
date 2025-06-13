@@ -1,6 +1,7 @@
-#include "chunk.h"
+#include <data/chunk.h>
 
-#include <stdlib.h>
+#include <cutil/std/stdlib.h>
+#include <cutil/util/macro.h>
 
 #include <data/image.h>
 #include <visuals/palette.h>
@@ -104,9 +105,9 @@ PixelChunk_invalidate_all_pixels(PixelChunk *chunk, const ChunkData *chunks)
 void
 PixelChunk_zoom(PixelChunk *chunk, const ChunkData *chunks, int stages)
 {
-    (void) chunk;
-    (void) chunks;
-    (void) stages;
+    CUTIL_UNUSED(chunk);
+    CUTIL_UNUSED(chunks);
+    CUTIL_UNUSED(stages);
 }
 
 void
@@ -114,7 +115,7 @@ PixelChunk_callback_update(
   PixelChunk *chunk, const ChunkData *chunks, const void *vparams
 )
 {
-    (void) chunks;
+    CUTIL_UNUSED(chunks);
     const ImageData *const imgdata = vparams;
     ImageData_update_chunk(imgdata, chunk);
 }
@@ -151,6 +152,6 @@ PixelChunk_callback_reset(
   PixelChunk *chunk, const ChunkData *chunks, const void *vparams
 )
 {
-    (void) vparams;
+    CUTIL_UNUSED(vparams);
     PixelChunk_invalidate_all_pixels(chunk, chunks);
 }

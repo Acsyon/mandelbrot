@@ -1,15 +1,15 @@
-#include "image.h"
-
-#include <math.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <data/image.h>
 
 #include <SDL2/SDL_timer.h>
 #include <gmp.h>
 #include <omp.h>
 
-#include <cutil/log.h>
+#include <cutil/io/log.h>
+#include <cutil/std/math.h>
+#include <cutil/std/stdbool.h>
+#include <cutil/std/stdio.h>
+#include <cutil/std/stdlib.h>
+#include <cutil/util/macro.h>
 
 #include <app/app.h>
 #include <data/pixel.h>
@@ -401,7 +401,7 @@ _imageData_update_framebuffer(ImageData *imgdata)
     const int num_px_im = params->num_px_im;
 
     int idx_chnk;
-#pragma omp parallel for private (idx_chnk)
+#pragma omp parallel for private(idx_chnk)
     for (idx_chnk = 0; idx_chnk < num_chnks_tot; ++idx_chnk) {
         const PixelChunk *const chunk = &chunks->data[idx_chnk];
         for (int idx_px_re = 0; idx_px_re < num_px_re; ++idx_px_re) {
@@ -451,10 +451,10 @@ ImageData_create(const Settings *settings)
 void
 ImageData_free(ImageData *imgdata)
 {
-    if (imgdata == NULL) {
-        return;
-    }
+    CUTIL_RETURN_IF_NULL(imgdata);
+
     _imageData_clear(imgdata);
+
     free(imgdata);
 }
 

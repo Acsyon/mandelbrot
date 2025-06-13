@@ -50,6 +50,7 @@ foreach (TEST_SOURCE ${TEST_SOURCES})
     target_link_libraries("${TEST_NAME}" PRIVATE "${AUXILIARY_STATIC_LIBRARY}")
 
     # Link GMP / MPIR, SDL and cJSON
+    target_include_directories("${TEST_NAME}" PRIVATE "${CMAKE_SOURCE_DIR}/submodules/cutil/lib/include")
     if (MANDELBROT_DISTRIBUTED)
         target_include_directories("${TEST_NAME}" PRIVATE "${CMAKE_INSTALL_PREFIX}/include")
         target_link_directories("${TEST_NAME}" PRIVATE "${CMAKE_INSTALL_PREFIX}/lib")

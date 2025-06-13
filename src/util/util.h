@@ -7,19 +7,9 @@
 #ifndef MANDELBROT_UTIL_UTIL_H_INCLUDED
 #define MANDELBROT_UTIL_UTIL_H_INCLUDED
 
-#include <stdio.h>
-
 #include <gmp.h>
 
-/**
- * Copies string `str` to newly malloc'd memory.
- *
- * @param[in] str string to be copied
- *
- * @return pointer to newly malloc'd copy of `str`
- */
-char *
-Util_strdup(const char *str);
+#include <cutil/std/stdio.h>
 
 /**
  * Reads contents of file into newly malloc'd string.
@@ -44,9 +34,9 @@ Util_mpf_to_str_base10(mpf_srcptr mpf);
 
 /**
  * Calculates new precision based on `upp`.
- * 
+ *
  * @param[in] upp units per pixel to calculate new precision from
- * 
+ *
  * @return new precision
  */
 mp_bitcnt_t

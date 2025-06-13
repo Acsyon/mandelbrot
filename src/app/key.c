@@ -1,11 +1,12 @@
-#include "key.h"
+#include <app/key.h>
 
 #include <limits.h>
-#include <stdbool.h>
 
 #include <SDL2/SDL.h>
 
-#include <cutil/log.h>
+#include <cutil/io/log.h>
+#include <cutil/std/stdbool.h>
+#include <cutil/util/macro.h>
 
 unsigned int
 Key_get_cooldown(enum Key key)
@@ -154,9 +155,7 @@ _keyStack_alloc(int size)
 static void
 _keyStack_free(struct _keyStack *stack)
 {
-    if (stack == NULL) {
-        return;
-    }
+    CUTIL_RETURN_IF_NULL(stack);
 
     free(stack->data);
 
@@ -219,9 +218,7 @@ KeyBuffer_alloc(void)
 void
 KeyBuffer_free(KeyBuffer *keybuf)
 {
-    if (keybuf == NULL) {
-        return;
-    }
+    CUTIL_RETURN_IF_NULL(keybuf);
 
     _keyStack_free(keybuf->stack_video);
     free(keybuf->keys);

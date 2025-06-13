@@ -1,10 +1,10 @@
-#include "video.h"
-
-#include <stdbool.h>
+#include <app/video.h>
 
 #include <SDL2/SDL.h>
 
-#include <cutil/log.h>
+#include <cutil/io/log.h>
+#include <cutil/std/stdbool.h>
+#include <cutil/util/macro.h>
 
 #include <app/app.h>
 #include <app/data.h>
@@ -30,9 +30,7 @@ struct Video {
 static void
 _video_free(Video *video)
 {
-    if (video == NULL) {
-        return;
-    }
+    CUTIL_RETURN_IF_NULL(video);
 
     SDL_FreeSurface(video->image);
     SDL_FreeSurface(video->surface);

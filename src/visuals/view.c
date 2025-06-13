@@ -1,8 +1,8 @@
-#include "view.h"
+#include <visuals/view.h>
 
-#include <stdlib.h>
-
-#include <cutil/log.h>
+#include <cutil/io/log.h>
+#include <cutil/std/stdlib.h>
+#include <cutil/util/macro.h>
 
 #include <util/util.h>
 
@@ -22,9 +22,7 @@ View_create(void)
 void
 View_free(View *view)
 {
-    if (view == NULL) {
-        return;
-    }
+    CUTIL_RETURN_IF_NULL(view);
 
     mpf_clear(view->cntr_re);
     mpf_clear(view->cntr_im);

@@ -1,10 +1,10 @@
-#include "palette.h"
+#include <visuals/palette.h>
 
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <cutil/log.h>
+#include <cutil/io/log.h>
+#include <cutil/std/math.h>
+#include <cutil/std/stdlib.h>
+#include <cutil/std/string.h>
+#include <cutil/util/macro.h>
 
 #include <util/num.h>
 #include <visuals/color.h>
@@ -23,7 +23,7 @@ const size_t PALETTE_FUNCTION_COUNT
 uint32_t
 Palette_gray(float pos, const void *params)
 {
-    (void) params;
+    CUTIL_UNUSED(params);
     const uint8_t val = powf(pos, 1.0F / 1.5F) * UINT8_MAX;
     uint32_t res = 0;
     res += val * UINT32_C(0x00010000);
@@ -35,7 +35,7 @@ Palette_gray(float pos, const void *params)
 uint32_t
 Palette_red(float pos, const void *params)
 {
-    (void) params;
+    CUTIL_UNUSED(params);
     const uint8_t val = powf(pos, 1.0F / 1.5F) * UINT8_MAX;
     return val * UINT32_C(0x00010000);
 }
@@ -43,7 +43,7 @@ Palette_red(float pos, const void *params)
 uint32_t
 Palette_green(float pos, const void *params)
 {
-    (void) params;
+    CUTIL_UNUSED(params);
     const uint8_t val = powf(pos, 1.0F / 1.5F) * UINT8_MAX;
     return val * UINT32_C(0x00000100);
 }
@@ -51,7 +51,7 @@ Palette_green(float pos, const void *params)
 uint32_t
 Palette_blue(float pos, const void *params)
 {
-    (void) params;
+    CUTIL_UNUSED(params);
     const uint8_t val = powf(pos, 1.0F / 1.5F) * UINT8_MAX;
     return val * UINT32_C(0x00000001);
 }
@@ -74,7 +74,7 @@ Palette_exp_hsv_offset(float pos, const void *params)
 uint32_t
 Palette_exp_hsv(float pos, const void *params)
 {
-    (void) params;
+    CUTIL_UNUSED(params);
     static const struct AHSV offset = {0};
     return Palette_exp_hsv_offset(pos, &offset);
 }
@@ -95,7 +95,7 @@ _lerp_rgb_to_u32(
 uint32_t
 Palette_ultra_fractal(float pos, const void *params)
 {
-    (void) params;
+    CUTIL_UNUSED(params);
     if (pos == 0.0F) {
         return 0;
     }
@@ -153,9 +153,7 @@ PaletteCycler_create(Palette_fnc *const *fncs, size_t num, size_t idx)
 void
 PaletteCycler_free(PaletteCycler *cycler)
 {
-    if (cycler == NULL) {
-        return;
-    }
+    CUTIL_RETURN_IF_NULL(cycler);
 
     free(cycler->fncs);
 
@@ -257,9 +255,7 @@ TripModeGenerator_create(enum TripModeType type)
 void
 TripModeGenerator_free(TripModeGenerator *tripgen)
 {
-    if (tripgen == NULL) {
-        return;
-    }
+    CUTIL_RETURN_IF_NULL(tripgen);
 
     free(tripgen->params);
 

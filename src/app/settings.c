@@ -1,11 +1,9 @@
-#include "settings.h"
+#include <app/settings.h>
 
-#include <stdlib.h>
-#include <string.h>
-
-#include <cutil/log.h>
-
-#include <util/util.h>
+#include <cutil/io/log.h>
+#include <cutil/std/stdlib.h>
+#include <cutil/std/string.h>
+#include <cutil/util/macro.h>
 
 #define DEFAULT_WIDTH 800
 #define DEFAULT_HEIGHT 600
@@ -54,9 +52,7 @@ Settings_create(void)
 void
 Settings_free(Settings *settings)
 {
-    if (settings == NULL) {
-        return;
-    }
+    CUTIL_RETURN_IF_NULL(settings);
 
     free(settings->view_file);
 
@@ -69,7 +65,7 @@ Settings_duplicate(const Settings *settings)
     Settings *const dup = malloc(sizeof *dup);
 
     memcpy(dup, settings, sizeof *settings);
-    dup->view_file = Util_strdup(settings->view_file);
+    dup->view_file = cutil_strdup(settings->view_file);
 
     return dup;
 }
