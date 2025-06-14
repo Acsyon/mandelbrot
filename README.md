@@ -47,13 +47,13 @@ This project uses CMake as its build system, so make sure to have it installed.
 Additionally, one or more git submodules need to be included depending on the installation mode. Since cutil is my own custom C library, there is no package for it. Therefore, it has to be included as submodule for both modes:
 
 ```sh
-git submodule update --init --remote submodules/cutil
+git submodule update --init submodules/cutil
 ```
 
 For the "distributed" mode, it is easiest to load all submodules via:
 
 ```sh
-git submodule update --init --recursive --remote
+git submodule update --init
 ```
 
 ### Preparing the "Development" Mode

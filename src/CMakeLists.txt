@@ -75,7 +75,12 @@ if (MANDELBROT_DISTRIBUTED)
     )
     add_dependencies("${AUXILIARY_STATIC_LIBRARY}" sdl_submodule)
 
-    find_package(SDL2 PATHS "${CMAKE_INSTALL_PREFIX}" NO_DEFAULT_PATH)
+    find_package(SDL2 PATHS "${CMAKE_INSTALL_PREFIX}" NO_DEFAULT_PATH QUIET)
+    if (SDL2_FOUND)
+        message(STATUS "Found locally built SDL2 library")
+    else ()
+        message(STATUS "SDL2 will be built during compilation")
+    endif ()
 else ()
     find_package(SDL2 REQUIRED)
 endif ()
@@ -195,12 +200,29 @@ if (MANDELBROT_DISTRIBUTED)
     )
     add_dependencies("${AUXILIARY_STATIC_LIBRARY}" cjson_submodule)
 
-    find_package(cJSON PATHS "${CMAKE_INSTALL_PREFIX}" NO_DEFAULT_PATH)
+    find_package(cJSON PATHS "${CMAKE_INSTALL_PREFIX}" NO_DEFAULT_PATH QUIET)
+    if (cJSON_FOUND)
+        message(STATUS "Found locally built cJSON library")
+    else ()
+        message(STATUS "cJSON will be built during compilation")
+    endif ()
 else ()
     find_package(cJSON REQUIRED)
 endif ()
 if (cJSON_FOUND)
     target_link_libraries("${AUXILIARY_STATIC_LIBRARY}" PRIVATE cjson)
+endif ()
+
+# In case of a clean build, we need to re-run cmake to find the locally built packages
+if (MANDELBROT_DISTRIBUTED)
+    add_custom_target(
+        find_local_packages
+        COMMAND ${CMAKE_COMMAND} ..
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/build"
+        DEPENDS sdl_submodule cjson_submodule
+        COMMENT "Find locally built packages during build step"
+    )
+    add_dependencies("${AUXILIARY_STATIC_LIBRARY}" find_local_packages)
 endif ()
 
 # Include cutil
