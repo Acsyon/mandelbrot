@@ -112,7 +112,7 @@ cmake --build .
 If you &ndash; for whatever reason &ndash; want to run the unit tests, you have to load the git submodule for the "Unity" unit-test framework:
 
 ```sh
-git submodule update --init --remote submodules/Unity
+git submodule update --init submodules/Unity
 ```
 
 Afterwards, CMake has to be set up with the appropriate variable. The tests will be built automatically if no target is specified. They can be run using CTest. All of this can be achieved by running the following commands:

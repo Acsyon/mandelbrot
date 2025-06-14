@@ -103,7 +103,7 @@ if (MANDELBROT_DISTRIBUTED)
             OUTPUT "${GMP_LIB_FILE}" "${GMP_HEADER_FILE}"
             COMMAND ./.bootstrap
             COMMAND ./configure --disable-shared "--prefix=${GMP_INSTALL_DIR}"
-                    "--libdir=${GMP_LIB_DIR}" --with-pic
+                    "--libdir=${GMP_LIB_DIR}" --with-pic "CFLAGS=\"-std=c17\""
             COMMAND make "-j${nproc}"
             COMMAND make install
             WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/submodules/gmp"
