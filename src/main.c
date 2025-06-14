@@ -25,11 +25,14 @@ enum {
     PALETTE_IDX_IDX,
     TRIP_MODE_IDX,
     VIEW_FILE_IDX,
+    ADDRESS_IDX,
+    PORT_IDX,
     LONGOPTS_ONLY_END_IDX,
 };
 
 static const cutil_Option LONGOPTS[] = {
   {"help", CUTIL_OPTION_NO_ARGUMENT, NULL, 'h'},
+  {"defaults", CUTIL_OPTION_NO_ARGUMENT, NULL, 'd'},
   {"env_path", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, 'e'},
   {"load", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, 'l'},
   {"save", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, 's'},
@@ -46,10 +49,12 @@ static const cutil_Option LONGOPTS[] = {
   {"palette_idx", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, PALETTE_IDX_IDX},
   {"trip_mode", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, TRIP_MODE_IDX},
   {"view_file", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, VIEW_FILE_IDX},
+  {"address", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, ADDRESS_IDX},
+  {"port", CUTIL_OPTION_REQUIRED_ARGUMENT, NULL, PORT_IDX},
   {0, 0, 0, 0},
 };
 
-static const char *const SHORTOPTS = "he:l:s:";
+static const char *const SHORTOPTS = "hde:l:s:";
 
 static const char *const USAGE
   = "Usage: mandelbrot [OPTION]...\n"
@@ -57,6 +62,7 @@ static const char *const USAGE
     "\n"
     "Options:\n"
     "  -h, --help      Show this help message and quit.\n"
+    "  -d, --defaults  Show default settings as JSON and quit.\n"
     "  -e, --env_path  Sets path of environment (for saving and loading) "
     "to work with\n"
     "\n"
@@ -81,7 +87,9 @@ static const char *const USAGE
     "      --palette_idx   Sets start index for colour palette\n"
     "      --trip_mode     Sets \"trip mode\" type\n"
     "      --view_file     Sets name of file to save view to (relative to "
-    "env)\n";
+    "env)\n"
+    "      --address       Sets address of server\n"
+    "      --port          Sets port of server\n";
 
 /**
  * Auxiliary struct for environment strings (path and file names)
@@ -113,6 +121,10 @@ _get_env(int argc, char **argv)
         switch (c) {
         case 'h': /* help */
             printf("%s", USAGE);
+            exit(EXIT_SUCCESS);
+        case 'd': /* defaults */
+            printf("mandelbrot default settings:\n");
+            JsonUtil_fwrite(DEFAULT_SETTINGS, stdout, &Settings_to_Json_void);
             exit(EXIT_SUCCESS);
         case 'e': /* env_path */
             env->path = cutil_strdup(cutil_optarg);
@@ -217,7 +229,15 @@ _get_settings(const struct _env *env, int argc, char **argv)
             settings->trip_mode = atoi(cutil_optarg);
             break;
         case VIEW_FILE_IDX: /* view_file */
+            free(settings->view_file);
             settings->view_file = cutil_strdup(cutil_optarg);
+            break;
+        case ADDRESS_IDX: /* address */
+            free(settings->address);
+            settings->address = cutil_strdup(cutil_optarg);
+            break;
+        case PORT_IDX: /* view_file */
+            settings->port = atoi(cutil_optarg);
             break;
         default: /* anything else has been handled before */
             break;

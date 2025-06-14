@@ -28,6 +28,8 @@ typedef struct {
     int palette_idx;   /* Default index of colour palette*/
     int trip_mode;     /* Type of trip mode */
     char *view_file;   /* File to save view to */
+    char *address;     /* Address of server */
+    uint16_t port;     /* Port of server */
 } Settings;
 
 /**

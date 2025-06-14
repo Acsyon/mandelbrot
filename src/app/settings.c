@@ -25,6 +25,9 @@
 
 #define DEFAULT_VIEW_FILENAME "view.json"
 
+#define DEFAULT_ADDRESS "127.0.0.1"
+#define DEFAULT_PORT UINT16_C(10101)
+
 static const Settings DEFAULT_SETTINGS_OBJECT = {
   .width = DEFAULT_WIDTH,
   .height = DEFAULT_HEIGHT,
@@ -39,6 +42,8 @@ static const Settings DEFAULT_SETTINGS_OBJECT = {
   .palette_idx = DEFAULT_PALETTE_INDEX,
   .trip_mode = DEFAULT_TRIP_MODE,
   .view_file = DEFAULT_VIEW_FILENAME,
+  .address = DEFAULT_ADDRESS,
+  .port = DEFAULT_PORT,
 };
 
 const Settings *const DEFAULT_SETTINGS = &DEFAULT_SETTINGS_OBJECT;
@@ -116,6 +121,9 @@ Settings_fill_from_Json(Settings *settings, const Json *json)
 
     JSON_TO_MEMBER(str, view_file);
 
+    JSON_TO_MEMBER(str, address);
+    JSON_TO_MEMBER(uint16_t, port);
+
 #undef JSON_TO_MEMBER
 }
 
@@ -158,6 +166,9 @@ Settings_to_Json(const Settings *settings)
     MEMBER_TO_JSON(int, trip_mode);
 
     MEMBER_TO_JSON(str, view_file);
+
+    MEMBER_TO_JSON(str, address);
+    MEMBER_TO_JSON(uint16_t, port);
 
 #undef MEMBER_TO_JSON
 

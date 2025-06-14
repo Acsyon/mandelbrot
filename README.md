@@ -142,6 +142,7 @@ Alternatively, the executable can also be started via your file browser.
 | **Option** | **Description** |
 | -----| ----- |
 | `-h` / `--help`| Show help message and quit |
+| `-d` / `--defaults`| Show default settings as JSON and quit |
 | `-e PATH` / `--env_path PATH`| Set path of environment (for saving and loading) |
 | `-l FILE` / `--load FILE` | Set name of file to load settings from (relative to `-e`, has no effect when `-e` is not set)
 | `-s FILE` / `--save FILE` | Set name of file to save settings to (relative to `-e`, has no effect when `-e` is not set)
@@ -158,6 +159,8 @@ Alternatively, the executable can also be started via your file browser.
 | `--palette_idx IDX` | Set start index for colour palette (default: 4) |
 | `--trip_mode MODE` | Sets "trip mode" type (default: 0) |
 | `--view_file FILE` | Sets file to read view from (default: "view.json") |
+| `--address ADDRESS` | Sets address of server (default: "127.0.0.1") |
+| `--port PORT` | Sets port of server (default: "10101") |
 
 Command-line arguments take precedence over the JSON configuration.
 
@@ -179,7 +182,9 @@ The JSON field names are identical to their corresponding command-line options:
   "fps": 30,
   "palette_idx": 4,
   "trip_mode": 0,
-  "view_file": "view.json"
+  "view_file": "view.json",
+  "address": "127.0.0.1",
+  "port": 10101
 }
 ```
 
