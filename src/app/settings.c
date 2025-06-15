@@ -71,6 +71,7 @@ Settings_duplicate(const Settings *settings)
 
     memcpy(dup, settings, sizeof *settings);
     dup->view_file = cutil_strdup(settings->view_file);
+    dup->address = cutil_strdup(settings->address);
 
     return dup;
 }
@@ -179,4 +180,29 @@ Json *
 Settings_to_Json_void(const void *vsettings)
 {
     return Settings_to_Json(vsettings);
+}
+
+Settings *
+Settings_consolidate_server_client(
+  const Settings *settings_server, const Settings *settings_client
+)
+{
+#define SET_FIELD_MIN(FIELD)                                                   \
+    settings->FIELD = CUTIL_MIN(settings_server->FIELD, settings_client->FIELD)
+
+    Settings *const settings = calloc(1UL, sizeof *settings);
+
+    SET_FIELD_MIN(width);
+    SET_FIELD_MIN(height);
+    settings->max_re = settings_client->max_re;
+    settings->min_re = settings_client->min_re;
+    settings->cntr_im = settings_client->cntr_im;
+    SET_FIELD_MIN(max_itrs);
+    SET_FIELD_MIN(num_chnks_re);
+    SET_FIELD_MIN(num_chnks_im);
+    settings->zoom_fac = settings_client->zoom_fac;
+
+    return settings;
+
+#undef SET_FIELD_MIN
 }

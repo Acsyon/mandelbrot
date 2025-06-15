@@ -136,4 +136,19 @@ Settings_to_Json(const Settings *settings);
 Json *
 Settings_to_Json_void(const void *vsettings);
 
+/**
+ * Creates newly malloc'd Settings object by consolidating the
+ * `settings_server`, which are taken to be the upper limit of the ressources
+ * the client might request, and the `client_settings`.
+ *
+ * @param[in] settings_server Settings object of server to be consolidated
+ * @param[in] settings_client Settings object of client to be consolidated
+ *
+ * @return pointer to newly malloc'd, consolidated Settings object
+ */
+Settings *
+Settings_consolidate_server_client(
+  const Settings *settings_server, const Settings *settings_client
+);
+
 #endif /* MANDELBROT_APP_SETTINGS_H_INCLUDED */

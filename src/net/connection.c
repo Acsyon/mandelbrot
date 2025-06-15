@@ -102,7 +102,7 @@ Connection_bind(uint16_t port)
         goto err;
     }
 
-    cutil_log_debug("Server listening on port %" PRIu16 "...", port);
+    cutil_log_info("Server listening on port %" PRIu16 "...", port);
 
     return conn;
 
@@ -138,7 +138,7 @@ Connection_connect(const char *addr, uint16_t port)
         goto err;
     }
 
-    cutil_log_debug("Established connection to %s:%" PRIu16, addr, port);
+    cutil_log_info("Established connection to %s:%" PRIu16, addr, port);
 
     return conn;
 
@@ -155,7 +155,7 @@ Connection_accept(Connection *conn)
         return false;
     }
 
-    cutil_log_debug("Waiting for client to connect...");
+    cutil_log_info("Waiting for client to connect...");
 
     struct sockaddr *const sockaddr = (struct sockaddr *) &conn->clt_addr;
     socklen_t addrlen = sizeof conn->clt_addr;
@@ -165,7 +165,7 @@ Connection_accept(Connection *conn)
         return false;
     }
 
-    cutil_log_debug("Client connected");
+    cutil_log_info("Client connected");
     return true;
 }
 
