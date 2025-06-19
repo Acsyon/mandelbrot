@@ -7,6 +7,7 @@
 
 #include <app/app.h>
 #include <app/settings.h>
+#include <util/util.h>
 
 #define DEFAULT_SETTINGS_FILENAME "settings.json"
 
@@ -159,16 +160,6 @@ _env_free(struct _env *env)
     free(env);
 }
 
-static char *
-_concat_paths(const char *path1, const char *path2)
-{
-    cutil_StringBuilder *const sb = cutil_StringBuilder_create();
-    cutil_StringBuilder_appendf(sb, "%s/%s", path1, path2);
-    char *const res = cutil_StringBuilder_duplicate_string(sb);
-    cutil_StringBuilder_free(sb);
-    return res;
-}
-
 static Settings *
 _get_settings(const struct _env *env, int argc, char **argv)
 {
@@ -177,7 +168,7 @@ _get_settings(const struct _env *env, int argc, char **argv)
     if (env->path != NULL) {
         const char *const fname
           = (env->load != NULL) ? env->load : DEFAULT_SETTINGS_FILENAME;
-        char *const fname_full = _concat_paths(env->path, fname);
+        char *const fname_full = Util_concat_paths(env->path, fname);
         JsonUtil_read(settings, fname_full, &Settings_fill_from_Json_void);
         free(fname_full);
     }
@@ -245,7 +236,7 @@ _get_settings(const struct _env *env, int argc, char **argv)
     }
 
     if (env->path != NULL && env->save != NULL) {
-        char *const fname_full = _concat_paths(env->path, env->save);
+        char *const fname_full = Util_concat_paths(env->path, env->save);
         JsonUtil_write(settings, fname_full, &Settings_to_Json_void);
         free(fname_full);
     }

@@ -1,4 +1,4 @@
-#include "connection.h"
+#include <net/connection.h>
 
 #include <errno.h>
 #include <inttypes.h>

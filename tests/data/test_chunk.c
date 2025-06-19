@@ -118,7 +118,7 @@ _should_shiftChunkCorrectly_when_provideShiftParameters(void)
     ChunkData_init(&chunks, &settings, px);
 
     PixelChunk *const chunk = &chunks.data[0];
-    const int shifts[2] = {-1, 1};
+    const int8_t shifts[2] = {-1, 1};
 
     /* Act */
     PixelChunk_callback_shift(chunk, &chunks, shifts);

@@ -9,7 +9,7 @@
 
 #include <app/video.h>
 
-static const char *const DEFAULT_ENVIRONMENT_PATH = "../env/";
+static const char *const DEFAULT_ENVIRONMENT_PATH = "../env";
 
 static struct {
     char *env_path;

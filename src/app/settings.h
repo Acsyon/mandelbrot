@@ -7,29 +7,27 @@
 #ifndef MANDELBROT_APP_SETTINGS_H_INCLUDED
 #define MANDELBROT_APP_SETTINGS_H_INCLUDED
 
-#include <stdint.h>
-
 #include <util/json.h>
 
 /**
  * Struct for settings
  */
 typedef struct {
-    int width;         /* Width of window in pixels */
-    int height;        /* Height of window in pixels */
-    double max_re;     /* Maximum value of real part */
-    double min_re;     /* Maximum value of imaginary part */
-    double cntr_im;    /* Imaginary part of centre point of window */
-    uint16_t max_itrs; /* Maximum number of Mandelbrot iterations to make */
-    int num_chnks_re;  /* Number of chunks in real direction */
-    int num_chnks_im;  /* Number of chunks in imaginary direction */
-    double zoom_fac;   /* Factor for one zoom stage */
-    uint16_t fps;      /* Frames per second (for intermediary updates) */
-    int palette_idx;   /* Default index of colour palette*/
-    int trip_mode;     /* Type of trip mode */
-    char *view_file;   /* File to save view to */
-    char *address;     /* Address of server */
-    uint16_t port;     /* Port of server */
+    uint16_t width;       /* Width of window in pixels */
+    uint16_t height;      /* Height of window in pixels */
+    uint16_t max_itrs;    /* Maximum number of Mandelbrot iterations to make */
+    uint8_t num_chnks_re; /* Number of chunks in real direction */
+    uint8_t num_chnks_im; /* Number of chunks in imaginary direction */
+    double zoom_fac;      /* Factor for one zoom stage */
+    uint16_t fps;         /* Frames per second (for intermediary updates) */
+    double max_re;        /* Maximum value of real part */
+    double min_re;        /* Maximum value of imaginary part */
+    double cntr_im;       /* Imaginary part of centre point of window */
+    uint8_t palette_idx;  /* Default index of colour palette*/
+    uint8_t trip_mode;    /* Type of trip mode */
+    char *view_file;      /* File to save view to */
+    char *address;        /* Address of server */
+    uint16_t port;        /* Port of server */
 } Settings;
 
 /**

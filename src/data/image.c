@@ -21,6 +21,14 @@
 #define INITIAL_PRECISION GMP_LIMB_BITS
 #define ITERATION_CUTOFF_ABSOLUTE_VALUE 2.0
 
+#define ZOOM_STAGES 1
+#define ZOOM_STAGES_POS INT8_C(+ZOOM_STAGES)
+#define ZOOM_STAGES_NEG INT8_C(-ZOOM_STAGES)
+
+#define SHIFT_STAGES 2
+#define SHIFT_STAGES_POS INT8_C(+SHIFT_STAGES)
+#define SHIFT_STAGES_NEG INT8_C(-SHIFT_STAGES)
+
 /**
  * Possible data states
  */
@@ -65,9 +73,9 @@ static void
 _imageData_init_data(ImageData *imgdata)
 {
     const Settings *const settings = imgdata->settings;
-    const int num_tot = settings->width * settings->height;
+    const uint32_t num_tot = settings->width * settings->height;
     imgdata->data = malloc(num_tot * sizeof *imgdata->data);
-    for (int i = 0; i < num_tot; ++i) {
+    for (uint32_t i = 0; i < num_tot; ++i) {
         PixelData_init(&imgdata->data[i]);
     }
     imgdata->framebuf = malloc(num_tot * sizeof *imgdata->framebuf);
@@ -102,10 +110,8 @@ static void
 _imageData_init_view_fname(ImageData *imgdata)
 {
     const char *const path = App_get_env_path();
-    char *const fname = imgdata->settings->view_file;
-    const size_t bufsiz = snprintf(NULL, 0, "%s/%s", path, fname) + 1;
-    imgdata->view_fname = malloc(bufsiz * sizeof *imgdata->view_fname);
-    snprintf(imgdata->view_fname, bufsiz, "%s/%s", path, fname);
+    const char *const fname = imgdata->settings->view_file;
+    imgdata->view_fname = Util_concat_paths(path, fname);
 }
 
 static ImageData *
@@ -146,8 +152,8 @@ static void
 _imageData_clear_data(ImageData *imgdata)
 {
     const Settings *const settings = imgdata->settings;
-    const int num_tot = settings->width * settings->height;
-    for (int i = 0; i < num_tot; ++i) {
+    const uint32_t num_tot = settings->width * settings->height;
+    for (uint32_t i = 0; i < num_tot; ++i) {
         PixelData_clear(&imgdata->data[i]);
     }
     free(imgdata->data);
@@ -201,9 +207,9 @@ static void
 _imageData_set_prec_data(ImageData *imgdata)
 {
     const Settings *const settings = imgdata->settings;
-    const int num_tot = settings->width * settings->height;
+    const uint32_t num_tot = settings->width * settings->height;
     const mp_bitcnt_t prec = imgdata->prec;
-    for (int i = 0; i < num_tot; ++i) {
+    for (uint32_t i = 0; i < num_tot; ++i) {
         PixelData_set_prec(&imgdata->data[i], prec);
     }
 }
@@ -231,19 +237,20 @@ _imageData_set_prec(ImageData *imgdata, mp_bitcnt_t prec)
 
 static void
 _imageData_update_chunk_pixels(
-  const ImageData *imgdata, PixelChunk *chunk, int idx_px_re, int idx_px_im
+  const ImageData *imgdata,
+  PixelChunk *chunk,
+  uint16_t idx_px_re,
+  uint16_t idx_px_im
 )
 {
     const ChunkData *const chunks = &imgdata->chunks;
     const ChunkParams *const params = &chunks->params;
 
-    const int stride = params->stride;
-    const int idx_px = idx_px_re * stride + idx_px_im;
+    const uint16_t stride = params->stride;
+    const uint32_t idx_px = idx_px_re * stride + idx_px_im;
     PixelData *const px = &chunk->data[idx_px];
 
-    if (px->state == PIXEL_STATE_VALID) {
-        return;
-    }
+    CUTIL_RETURN_IF_VAL(px->state, PIXEL_STATE_VALID);
 
     PixelDataBuffer *const tbuf = imgdata->tbuf;
     const Settings *const settings = imgdata->settings;
@@ -253,13 +260,13 @@ _imageData_update_chunk_pixels(
     const mpf_srcptr cntr_im = view->cntr_im;
     const mpf_srcptr upp = view->upp;
 
-    const int num_re = settings->width;
-    const int num_im = settings->height;
-    const int idx_cntr_re = num_re / 2;
-    const int idx_cntr_im = num_im / 2;
+    const uint16_t num_re = settings->width;
+    const uint16_t num_im = settings->height;
+    const uint16_t idx_cntr_re = num_re / 2;
+    const uint16_t idx_cntr_im = num_im / 2;
 
-    const int idx_re = chunk->idx_re * params->num_px_re + idx_px_re;
-    const int idx_im = chunk->idx_im * params->num_px_im + idx_px_im;
+    const uint16_t idx_re = chunk->idx_re * params->num_px_re + idx_px_re;
+    const uint16_t idx_im = chunk->idx_im * params->num_px_im + idx_px_im;
 
     mpf_set_d(px->re, (1.0 * (idx_re - idx_cntr_re)));
     mpf_mul(px->re, px->re, upp);
@@ -282,7 +289,7 @@ _imageData_apply_to_all_chunks(
 )
 {
     ChunkData *const chunks = &imgdata->chunks;
-    const int num_tot = chunks->num_re * chunks->num_im;
+    const uint16_t num_tot = chunks->num_re * chunks->num_im;
     int idx;
 #pragma omp parallel for private(idx)
     for (idx = 0; idx < num_tot; ++idx) {
@@ -292,7 +299,7 @@ _imageData_apply_to_all_chunks(
 }
 
 static void
-_imageData_register_zoom(ImageData *imgdata, int stages)
+_imageData_register_zoom(ImageData *imgdata, int8_t stages)
 {
     const Settings *const settings = imgdata->settings;
     const mpf_ptr buf = imgdata->action_buf;
@@ -301,7 +308,7 @@ _imageData_register_zoom(ImageData *imgdata, int stages)
     const mpf_ptr upp = view->upp;
 
     mpf_set_d(buf, settings->zoom_fac);
-    for (int i = 0; i < abs(stages); ++i) {
+    for (uint8_t i = 0; i < abs(stages); ++i) {
         (stages > 0) ? mpf_mul(upp, upp, buf) : mpf_div(upp, upp, buf);
     }
 
@@ -317,7 +324,7 @@ _imageData_register_zoom(ImageData *imgdata, int stages)
 }
 
 static void
-_imageData_register_shift(ImageData *imgdata, int shift_re, int shift_im)
+_imageData_register_shift(ImageData *imgdata, int8_t shift_re, int8_t shift_im)
 {
     const Settings *const settings = imgdata->settings;
     const mpf_ptr buf = imgdata->action_buf;
@@ -328,7 +335,7 @@ _imageData_register_shift(ImageData *imgdata, int shift_re, int shift_im)
     const mpf_ptr upp = view->upp;
 
     if (shift_re != 0) {
-        const int num_px_re = settings->width / settings->num_chnks_re;
+        const uint16_t num_px_re = settings->width / settings->num_chnks_re;
         const long int offs_re = shift_re * num_px_re;
         mpf_set_si(buf, offs_re);
         mpf_mul(buf, buf, upp);
@@ -336,7 +343,7 @@ _imageData_register_shift(ImageData *imgdata, int shift_re, int shift_im)
     }
 
     if (shift_im != 0) {
-        const int num_px_im = settings->height / settings->num_chnks_im;
+        const uint16_t num_px_im = settings->height / settings->num_chnks_im;
         const long int offs_im = shift_im * num_px_im;
         mpf_set_si(buf, offs_im);
         mpf_mul(buf, buf, upp);
@@ -344,7 +351,7 @@ _imageData_register_shift(ImageData *imgdata, int shift_re, int shift_im)
     }
 
     PixelChunk_callback *const callback = &PixelChunk_callback_shift;
-    const int shifts[] = {shift_re, shift_im};
+    const int8_t shifts[] = {shift_re, shift_im};
     _imageData_apply_to_all_chunks(imgdata, callback, shifts);
 
     cutil_log_debug("Performed shift: %i %i", shift_re, shift_im);
@@ -391,27 +398,29 @@ static void
 _imageData_update_framebuffer(ImageData *imgdata)
 {
     const ChunkData *const chunks = &imgdata->chunks;
-    const int num_chnks_re = chunks->num_re;
-    const int num_chnks_im = chunks->num_im;
-    const int num_chnks_tot = num_chnks_re * num_chnks_im;
+    const uint8_t num_chnks_re = chunks->num_re;
+    const uint8_t num_chnks_im = chunks->num_im;
+    const uint16_t num_chnks_tot = num_chnks_re * num_chnks_im;
 
     const ChunkParams *const params = &chunks->params;
-    const int stride = params->stride;
-    const int num_px_re = params->num_px_re;
-    const int num_px_im = params->num_px_im;
+    const uint16_t stride = params->stride;
+    const uint16_t num_px_re = params->num_px_re;
+    const uint16_t num_px_im = params->num_px_im;
 
     int idx_chnk;
 #pragma omp parallel for private(idx_chnk)
     for (idx_chnk = 0; idx_chnk < num_chnks_tot; ++idx_chnk) {
         const PixelChunk *const chunk = &chunks->data[idx_chnk];
-        for (int idx_px_re = 0; idx_px_re < num_px_re; ++idx_px_re) {
-            for (int idx_px_im = 0; idx_px_im < num_px_im; ++idx_px_im) {
-                const int idx_rel = idx_px_re * stride + idx_px_im;
+        for (uint16_t idx_px_re = 0; idx_px_re < num_px_re; ++idx_px_re) {
+            for (uint16_t idx_px_im = 0; idx_px_im < num_px_im; ++idx_px_im) {
+                const uint32_t idx_rel = idx_px_re * stride + idx_px_im;
                 const PixelData *const px = &chunk->data[idx_rel];
 
-                const int idx_abs_re = chunk->idx_re * num_px_re + idx_px_re;
-                const int idx_abs_im = chunk->idx_im * num_px_im + idx_px_im;
-                const int idx_abs = idx_abs_re * stride + idx_abs_im;
+                const uint16_t idx_abs_re
+                  = chunk->idx_re * num_px_re + idx_px_re;
+                const uint16_t idx_abs_im
+                  = chunk->idx_im * num_px_im + idx_px_im;
+                const uint32_t idx_abs = idx_abs_re * stride + idx_abs_im;
                 imgdata->framebuf[idx_abs] = px->itrs;
             }
         }
@@ -430,8 +439,8 @@ static bool
 _imageData_is_complete(ImageData *imgdata)
 {
     ChunkData *const chunks = &imgdata->chunks;
-    const int num_tot = chunks->num_re * chunks->num_im;
-    for (int idx = 0; idx < num_tot; ++idx) {
+    const uint16_t num_tot = chunks->num_re * chunks->num_im;
+    for (uint16_t idx = 0; idx < num_tot; ++idx) {
         PixelChunk *const chunk = &chunks->data[idx];
         if (chunk->state == CHUNK_STATE_INVALID) {
             return false;
@@ -461,29 +470,25 @@ ImageData_free(ImageData *imgdata)
 void
 ImageData_register_action(ImageData *imgdata, enum Key key)
 {
-    static const int ZOOM_STAGES = 1;
-    static const int SHIFT_STAGES = 2;
-    if (imgdata->state == DATA_STATE_WORKING) {
-        return;
-    }
+    CUTIL_RETURN_IF_VAL(imgdata->state, DATA_STATE_WORKING);
     switch (key) {
     case KEY_ZOOM_IN: {
-        _imageData_register_zoom(imgdata, +ZOOM_STAGES);
+        _imageData_register_zoom(imgdata, ZOOM_STAGES_POS);
     } break;
     case KEY_ZOOM_OUT: {
-        _imageData_register_zoom(imgdata, -ZOOM_STAGES);
+        _imageData_register_zoom(imgdata, ZOOM_STAGES_NEG);
     } break;
     case KEY_UP: {
-        _imageData_register_shift(imgdata, 0, -SHIFT_STAGES);
+        _imageData_register_shift(imgdata, 0, SHIFT_STAGES_NEG);
     } break;
     case KEY_DOWN: {
-        _imageData_register_shift(imgdata, 0, +SHIFT_STAGES);
+        _imageData_register_shift(imgdata, 0, SHIFT_STAGES_POS);
     } break;
     case KEY_LEFT: {
-        _imageData_register_shift(imgdata, -SHIFT_STAGES, 0);
+        _imageData_register_shift(imgdata, SHIFT_STAGES_NEG, 0);
     } break;
     case KEY_RIGHT: {
-        _imageData_register_shift(imgdata, +SHIFT_STAGES, 0);
+        _imageData_register_shift(imgdata, SHIFT_STAGES_POS, 0);
     } break;
     case KEY_RESET: {
         _imageData_register_reset(imgdata);
@@ -518,17 +523,15 @@ ImageData_perform_action(ImageData *imgdata, unsigned int mseconds)
 void
 ImageData_update_chunk(const ImageData *imgdata, PixelChunk *chunk)
 {
-    if (chunk->state == CHUNK_STATE_VALID) {
-        return;
-    }
+    CUTIL_RETURN_IF_VAL(chunk->state, CHUNK_STATE_VALID);
 
     const ChunkData *const chunks = &imgdata->chunks;
     const ChunkParams *const params = &chunks->params;
-    const int num_px_re = params->num_px_re;
-    const int num_px_im = params->num_px_im;
+    const uint16_t num_px_re = params->num_px_re;
+    const uint16_t num_px_im = params->num_px_im;
 
-    for (int idx_px_re = 0; idx_px_re < num_px_re; ++idx_px_re) {
-        for (int idx_px_im = 0; idx_px_im < num_px_im; ++idx_px_im) {
+    for (uint16_t idx_px_re = 0; idx_px_re < num_px_re; ++idx_px_re) {
+        for (uint16_t idx_px_im = 0; idx_px_im < num_px_im; ++idx_px_im) {
             _imageData_update_chunk_pixels(
               imgdata, chunk, idx_px_re, idx_px_im
             );

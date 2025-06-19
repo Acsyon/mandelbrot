@@ -52,7 +52,7 @@ Json_compare(const Json *lhs, const Json *rhs, bool case_sensitive)
         return EXIT_SUCCESS;                                                   \
     }
 
-DEFINE_JSON_TO_TYPE_FUNC(int)
+DEFINE_JSON_TO_TYPE_FUNC(uint8_t)
 DEFINE_JSON_TO_TYPE_FUNC(uint16_t)
 DEFINE_JSON_TO_TYPE_FUNC(size_t)
 DEFINE_JSON_TO_TYPE_FUNC(double)
@@ -82,7 +82,7 @@ Json_elem_to_str(const Json *json, const char *elem, char **ptr)
         return EXIT_SUCCESS;                                                   \
     }
 
-DEFINE_JSON_ADD_TYPE_FUNC(int)
+DEFINE_JSON_ADD_TYPE_FUNC(uint8_t)
 DEFINE_JSON_ADD_TYPE_FUNC(uint16_t)
 DEFINE_JSON_ADD_TYPE_FUNC(size_t)
 DEFINE_JSON_ADD_TYPE_FUNC(double)

@@ -23,9 +23,9 @@ enum ChunkState {
  * Struct containing the parameters of the chunks
  */
 typedef struct {
-    int stride;
-    int num_px_re;
-    int num_px_im;
+    uint16_t stride;
+    uint16_t num_px_re;
+    uint16_t num_px_im;
 } ChunkParams;
 
 /**
@@ -41,8 +41,8 @@ ChunkParams_init(ChunkParams *params, const Settings *settings);
  * Struct containing data for each chunk
  */
 typedef struct {
-    int idx_re;
-    int idx_im;
+    uint8_t idx_re;
+    uint8_t idx_im;
     PixelData *data;
     enum ChunkState state;
 } PixelChunk;
@@ -52,8 +52,8 @@ typedef struct {
  */
 typedef struct {
     ChunkParams params;
-    int num_re;
-    int num_im;
+    uint8_t num_re;
+    uint8_t num_im;
     PixelChunk *data;
 } ChunkData;
 
@@ -95,7 +95,7 @@ PixelChunk_invalidate_all_pixels(PixelChunk *chunk, const ChunkData *chunks);
  * @param[in] stages zoom stages
  */
 void
-PixelChunk_zoom(PixelChunk *chunk, const ChunkData *chunks, int stages);
+PixelChunk_zoom(PixelChunk *chunk, const ChunkData *chunks, int8_t stages);
 
 /**
  * Typedef for PixelChunk action callback function

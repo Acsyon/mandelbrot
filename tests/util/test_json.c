@@ -82,19 +82,19 @@ _should_compareJsonObjects_when_callJsonCompare(void)
 }
 
 static void
-_should_readIntFromJson_when_callJsonElemToInt(void)
+_should_readU8FromJson_when_callJsonElemToU8(void)
 {
     /* Arrange */
     Json *json = Json_create();
-    Json_add_int(json, "key", 42);
-    int value = 0;
+    Json_add_uint8_t(json, "key", 42);
+    uint8_t value = 0;
 
     /* Act */
-    const int result = Json_elem_to_int(json, "key", &value);
+    const int result = Json_elem_to_uint8_t(json, "key", &value);
 
     /* Assert */
     TEST_ASSERT_EQUAL_INT(EXIT_SUCCESS, result);
-    TEST_ASSERT_EQUAL_INT(42, value);
+    TEST_ASSERT_EQUAL_UINT8(42, value);
 
     /* Cleanup */
     Json_free(json);
@@ -120,13 +120,13 @@ _should_readStringFromJson_when_callJsonElemToStr(void)
 }
 
 static void
-_should_addIntToJson_when_callJsonAddInt(void)
+_should_addU8ToJson_when_callJsonAddU8(void)
 {
     /* Arrange */
     Json *const json = Json_create();
 
     /* Act */
-    const int result = Json_add_int(json, "key", 42);
+    const int result = Json_add_uint8_t(json, "key", 42);
 
     /* Assert */
     TEST_ASSERT_EQUAL_INT(EXIT_SUCCESS, result);
@@ -191,9 +191,9 @@ main(void)
     RUN_TEST(_should_returnNull_when_callJsonFromStringWithInvalidInput);
     RUN_TEST(_should_convertJsonToString_when_callJsonToString);
     RUN_TEST(_should_compareJsonObjects_when_callJsonCompare);
-    RUN_TEST(_should_readIntFromJson_when_callJsonElemToInt);
+    RUN_TEST(_should_readU8FromJson_when_callJsonElemToU8);
     RUN_TEST(_should_readStringFromJson_when_callJsonElemToStr);
-    RUN_TEST(_should_addIntToJson_when_callJsonAddInt);
+    RUN_TEST(_should_addU8ToJson_when_callJsonAddU8);
     RUN_TEST(_should_addStringToJson_when_callJsonAddStr);
     RUN_TEST(_should_fillObjectFromJsonString_when_callJsonUtilFillFromString);
 

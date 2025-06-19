@@ -82,7 +82,7 @@ Json_compare(const Json *lhs, const Json *rhs, bool case_sensitive);
 #define DECLARE_JSON_TO_TYPE_FUNC(TYPE)                                        \
     int Json_elem_to_##TYPE(const Json *json, const char *elem, TYPE *ptr);
 
-DECLARE_JSON_TO_TYPE_FUNC(int)
+DECLARE_JSON_TO_TYPE_FUNC(uint8_t)
 DECLARE_JSON_TO_TYPE_FUNC(uint16_t)
 DECLARE_JSON_TO_TYPE_FUNC(size_t)
 DECLARE_JSON_TO_TYPE_FUNC(double)
@@ -115,7 +115,7 @@ Json_elem_to_str(const Json *json, const char *elem, char **ptr);
 #define DECLARE_JSON_ADD_TYPE_FUNC(TYPE)                                       \
     int Json_add_##TYPE(Json *json, const char *elem, TYPE var);
 
-DECLARE_JSON_ADD_TYPE_FUNC(int)
+DECLARE_JSON_ADD_TYPE_FUNC(uint8_t)
 DECLARE_JSON_ADD_TYPE_FUNC(uint16_t)
 DECLARE_JSON_ADD_TYPE_FUNC(size_t)
 DECLARE_JSON_ADD_TYPE_FUNC(double)

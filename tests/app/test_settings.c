@@ -4,22 +4,24 @@
 
 static const Settings ASSERT_SETTINGS_1 = {0};
 static const Settings ASSERT_SETTINGS_2 = {
-  .width = 1,
-  .height = 2,
+  .width = UINT16_C(1),
+  .height = UINT16_C(2),
   .max_re = 4.0F,
   .min_re = 3.0F,
   .cntr_im = 5.0F,
   .max_itrs = UINT16_C(4),
-  .num_chnks_re = 7,
-  .num_chnks_im = 8,
+  .num_chnks_re = UINT8_C(7),
+  .num_chnks_im = UINT8_C(8),
   .zoom_fac = 9.0F,
   .fps = UINT16_C(10),
-  .palette_idx = 11,
-  .trip_mode = 12,
+  .palette_idx = UINT8_C(11),
+  .trip_mode = UINT8_C(12),
   .view_file = "13",
+  .address = "14",
+  .port = UINT16_C(15),
 };
 static const Settings ASSERT_SETTINGS_3 = {
-  .width = 1,
+  .width = UINT16_C(1),
   .max_re = 2.0F,
   .min_re = -1.0F,
   .cntr_im = -3.0F,
@@ -30,12 +32,14 @@ static const Settings ASSERT_SETTINGS_3 = {
 static const char *const SETTINGS_DEFAULT_JSON
   = "{\"width\":800,\"height\":600,\"max_re\":1,\"min_re\":-2,\"cntr_im\":0,"
     "\"max_itrs\":500,\"num_chnks_re\":20,\"num_chnks_im\":20,\"zoom_fac\":0.5,"
-    "\"fps\":30,\"palette_idx\":4,\"trip_mode\":0,\"view_file\":\"view.json\"}";
+    "\"fps\":30,\"palette_idx\":4,\"trip_mode\":0,\"view_file\":\"view.json\","
+    "\"address\":\"127.0.0.1\",\"port\":10101}";
 static const char *const SETTINGS_1_JSON = "{}";
 static const char *const SETTINGS_2_JSON
   = "{\"width\":1,\"height\":2,\"max_re\":4,\"min_re\":3,\"cntr_im\":5,\"max_"
     "itrs\":4,\"num_chnks_re\":7,\"num_chnks_im\":8,\"zoom_fac\":9,\"fps\":10,"
-    "\"palette_idx\":11,\"trip_mode\":12,\"view_file\":\"13\"}";
+    "\"palette_idx\":11,\"trip_mode\":12,\"view_file\":\"13\",\"address\":"
+    "\"14\",\"port\":15}";
 static const char *const SETTINGS_3_JSON
   = "{\"width\":1,\"max_re\":2,\"min_re\":-1,\"cntr_im\":-3,\"view_file\":"
     "\"test.dat\"}";
@@ -235,6 +239,6 @@ main(void)
     RUN_TEST(_should_createCorrectSettings_when_useReadFromJson);
     RUN_TEST(_should_createCorrectJson_when_useCreatefromSettings);
     RUN_TEST(_should_duplicateSettingsCorrectly_when_useJsonConversion);
-    
+
     return UNITY_END();
 }

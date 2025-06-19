@@ -12,6 +12,18 @@
 #include <cutil/std/stdio.h>
 
 /**
+ * Returns the concatenation of two paths `path1` and `path2`, i.e.,
+ * "path1/path2".
+ *
+ * @param[in] path1 first path of concatenation
+ * @param[in] path2 second path of concatenation
+ *
+ * @return newly malloc'd string containing the concatenated path
+ */
+char *
+Util_concat_paths(const char *path1, const char *path2);
+
+/**
  * Reads contents of file into newly malloc'd string.
  *
  * @param[in] in FILE stream to read data from

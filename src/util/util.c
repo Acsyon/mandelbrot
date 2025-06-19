@@ -7,6 +7,16 @@
 #include <cutil/util/macro.h>
 
 char *
+Util_concat_paths(const char *path1, const char *path2)
+{
+    cutil_StringBuilder *const sb = cutil_StringBuilder_create();
+    cutil_StringBuilder_appendf(sb, "%s/%s", path1, path2);
+    char *const res = cutil_StringBuilder_duplicate_string(sb);
+    cutil_StringBuilder_free(sb);
+    return res;
+}
+
+char *
 Util_file_to_str(FILE *in)
 {
     CUTIL_RETURN_NULL_IF_NULL(in);
