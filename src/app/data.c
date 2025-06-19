@@ -7,7 +7,7 @@
 #include <app/settings.h>
 #include <data/image.h>
 
-struct GraphicsData {
+struct _graphicsData {
     ImageData *imgdata;
 };
 

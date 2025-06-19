@@ -12,7 +12,7 @@
 /**
  * Opaque GraphicsData type
  */
-typedef struct GraphicsData GraphicsData;
+typedef struct _graphicsData GraphicsData;
 
 /**
  * Initializes and returns GraphicsData object according to Settings in App.

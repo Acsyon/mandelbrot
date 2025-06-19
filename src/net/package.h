@@ -28,7 +28,7 @@ typedef struct {
 /**
  * Opaque package type
  */
-typedef struct Package Package;
+typedef struct _package Package;
 
 /**
  * Creates a new Package object of type `type` that can safely be freed. Memory

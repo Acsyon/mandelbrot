@@ -115,7 +115,7 @@ extern const size_t PALETTE_FUNCTION_COUNT;
 /**
  * Opaque palette cycler object
  */
-typedef struct PaletteCycler PaletteCycler;
+typedef struct _paletteCycler PaletteCycler;
 
 /**
  * Initializes and returns newly malloc'd PaletteCycler object.
@@ -155,7 +155,7 @@ enum TripModeType { TRIP_MODE_PHASE, TRIP_MODE_LERP };
 /**
  * Opaque trip mode generator object
  */
-typedef struct TripModeGenerator TripModeGenerator;
+typedef struct _tripModeGenerator TripModeGenerator;
 
 /**
  * Initializes and returns newly malloc'd TripModeGenerator object.

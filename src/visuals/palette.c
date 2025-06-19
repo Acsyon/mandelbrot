@@ -125,7 +125,7 @@ Palette_ultra_fractal(float pos, const void *params)
     );
 }
 
-struct PaletteCycler {
+struct _paletteCycler {
     size_t num;
     Palette_fnc **fncs;
     size_t idx;
@@ -203,7 +203,7 @@ _tripModeGenerator_advance_lerp(void *params)
       = idx_min + fmodf(*p_idx - idx_min + 0.01F, 1.0F * (idx_max - idx_min));
 }
 
-struct TripModeGenerator {
+struct _tripModeGenerator {
     void (*advance)(void *params);
     Palette_fnc *palette;
     void *params;

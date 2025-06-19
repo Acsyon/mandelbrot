@@ -34,7 +34,7 @@ Key_get_cooldown(enum Key key)
 /**
  * Currently, the key map is just a function pointer to the map function
  */
-struct KeyMap {
+struct _keyMap {
     enum Key (*map_fnc)(SDL_Keycode sdl_key);
 };
 
@@ -192,7 +192,7 @@ _keyStack_pop(struct _keyStack *stack)
  * element `data_action`. For video actions, we allow for an unlimited number of
  * actions, i.e., three, and thus we have a _keyStack `stack_video`.
  */
-struct KeyBuffer {
+struct _keyBuffer {
     struct _keyBufferEntry *keys;
     struct _keyStack *stack_video;
     enum Key data_action;

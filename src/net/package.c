@@ -13,7 +13,7 @@
 /**
  * Internal representation of a Package.
  */
-struct Package {
+struct _package {
     const PackageType *type; /**< Type, i.e., vtable */
     uint64_t capacity;       /**< Capacity of `data` */
     uint64_t size;           /**< Size of `data` */

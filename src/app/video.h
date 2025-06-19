@@ -10,7 +10,7 @@
 /**
  * Opaque Video type
  */
-typedef struct Video Video;
+typedef struct _video Video;
 
 /**
  * Initializes and returns Video object according to Settings in App.

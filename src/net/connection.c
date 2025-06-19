@@ -25,7 +25,7 @@ typedef int SOCKET;
 
 static bool _reuse_address = false;
 
-struct Connection {
+struct _connection {
     enum ConnectionType type;
     SOCKET srv_sock;
     struct sockaddr_in srv_addr;

@@ -41,7 +41,7 @@ Key_get_cooldown(enum Key key);
 /**
  * Opaque keymap object
  */
-typedef struct KeyMap KeyMap;
+typedef struct _keyMap KeyMap;
 
 /**
  * Default Keymap
@@ -81,7 +81,7 @@ KeyCategory_categorize(enum Key key);
 /**
  * Opaque key buffer object
  */
-typedef struct KeyBuffer KeyBuffer;
+typedef struct _keyBuffer KeyBuffer;
 
 /**
  * Initializes and returns newly malloc'd KeyBuffer object.

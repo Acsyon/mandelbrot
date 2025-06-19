@@ -24,7 +24,7 @@ enum ConnectionType {
 /**
  * Opaque Connection object
  */
-typedef struct Connection Connection;
+typedef struct _connection Connection;
 
 /**
  * Closes the connection `conn`.

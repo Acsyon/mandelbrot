@@ -14,7 +14,7 @@
 #include <util/sys.h>
 #include <visuals/palette.h>
 
-struct Video {
+struct _video {
     Settings *settings;
     GraphicsData *gfxdata;
     SDL_Window *window;
