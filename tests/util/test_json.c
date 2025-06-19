@@ -167,7 +167,7 @@ _should_fillObjectFromJsonString_when_callJsonUtilFillFromString(void)
     char *value = &buffer[0];
 
     /* Act */
-    JsonUtil_fill_from_string(&value, json_str, &_callback);
+    jsonutil_fill_from_string(&value, json_str, &_callback);
 
     /* Cleanup */
     TEST_ASSERT_EQUAL_STRING("value", value);

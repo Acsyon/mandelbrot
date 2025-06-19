@@ -7,7 +7,7 @@
 #include <cutil/util/macro.h>
 
 char *
-Util_concat_paths(const char *path1, const char *path2)
+util_concat_paths(const char *path1, const char *path2)
 {
     cutil_StringBuilder *const sb = cutil_StringBuilder_create();
     cutil_StringBuilder_appendf(sb, "%s/%s", path1, path2);
@@ -17,7 +17,7 @@ Util_concat_paths(const char *path1, const char *path2)
 }
 
 char *
-Util_file_to_str(FILE *in)
+util_file_to_str(FILE *in)
 {
     CUTIL_RETURN_NULL_IF_NULL(in);
 
@@ -56,7 +56,7 @@ _get_mpf_str_base10(mpf_srcptr mpf, mp_exp_t *p_exp)
 }
 
 char *
-Util_mpf_to_str_base10(mpf_srcptr mpf)
+util_mpf_to_str_base10(mpf_srcptr mpf)
 {
     cutil_StringBuilder *const sb = cutil_StringBuilder_create();
 
@@ -76,7 +76,7 @@ Util_mpf_to_str_base10(mpf_srcptr mpf)
 }
 
 mp_bitcnt_t
-Util_calculate_new_prec(mpf_srcptr upp)
+util_calculate_new_prec(mpf_srcptr upp)
 {
     static const mp_bitcnt_t MIN_PREC = GMP_LIMB_BITS;
     static const mp_bitcnt_t MAX_PREC = GMP_LIMB_BITS * 1024;

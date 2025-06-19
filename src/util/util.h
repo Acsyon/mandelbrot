@@ -21,7 +21,7 @@
  * @return newly malloc'd string containing the concatenated path
  */
 char *
-Util_concat_paths(const char *path1, const char *path2);
+util_concat_paths(const char *path1, const char *path2);
 
 /**
  * Reads contents of file into newly malloc'd string.
@@ -31,7 +31,7 @@ Util_concat_paths(const char *path1, const char *path2);
  * @return newly malloc'd string with contents of `in` (NULL for error)
  */
 char *
-Util_file_to_str(FILE *in);
+util_file_to_str(FILE *in);
 
 /**
  * Converts GMP floating point number `mpf` (in base 10) to a newly malloc'd
@@ -42,7 +42,7 @@ Util_file_to_str(FILE *in);
  * @return newly malloc'd string of GMP floating point number
  */
 char *
-Util_mpf_to_str_base10(mpf_srcptr mpf);
+util_mpf_to_str_base10(mpf_srcptr mpf);
 
 /**
  * Calculates new precision based on `upp`.
@@ -52,6 +52,6 @@ Util_mpf_to_str_base10(mpf_srcptr mpf);
  * @return new precision
  */
 mp_bitcnt_t
-Util_calculate_new_prec(mpf_srcptr upp);
+util_calculate_new_prec(mpf_srcptr upp);
 
 #endif /* MANDELBROT_UTIL_UTIL_H_INCLUDED */

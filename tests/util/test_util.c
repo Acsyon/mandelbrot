@@ -17,7 +17,7 @@ _should_readFileToString_when_callUtilFileToStr(void)
     rewind(file);
 
     /* Act */
-    char *const result = Util_file_to_str(file);
+    char *const result = util_file_to_str(file);
 
     /* Assert */
     TEST_ASSERT_NOT_NULL(result);
@@ -35,7 +35,7 @@ _should_returnNull_when_callUtilFileToStrWithInvalidFile(void)
     FILE *const file = NULL;
 
     /* Act */
-    char *const result = Util_file_to_str(file);
+    char *const result = util_file_to_str(file);
 
     /* Assert */
     TEST_ASSERT_NULL(result);
@@ -49,7 +49,7 @@ _should_convertMpfToString_when_callUtilMpfToStrBase10(void)
     mpf_init_set_d(mpf, 123.375);
 
     /* Act */
-    char *const result = Util_mpf_to_str_base10(mpf);
+    char *const result = util_mpf_to_str_base10(mpf);
 
     /* Assert */
     TEST_ASSERT_NOT_NULL(result);
@@ -68,7 +68,7 @@ _should_calculateNewPrecision_when_callUtilCalculateNewPrec(void)
     mpf_init_set_str(upp, "1.0e-100", 10);
 
     /* Act */
-    const mp_bitcnt_t result = Util_calculate_new_prec(upp);
+    const mp_bitcnt_t result = util_calculate_new_prec(upp);
 
     /* Assert */
     TEST_ASSERT_EQUAL(384, result);

@@ -9,6 +9,10 @@
 #include <app/settings.h>
 #include <util/util.h>
 
+#ifndef __STDC_IEC_559__
+    #error "System does not support platform-independent floats"
+#endif
+
 #define DEFAULT_SETTINGS_FILENAME "settings.json"
 
 enum {
@@ -125,7 +129,7 @@ _get_env(int argc, char **argv)
             exit(EXIT_SUCCESS);
         case 'd': /* defaults */
             printf("mandelbrot default settings:\n");
-            JsonUtil_fwrite(DEFAULT_SETTINGS, stdout, &Settings_to_Json_void);
+            jsonutil_fwrite(DEFAULT_SETTINGS, stdout, &Settings_to_Json_void);
             exit(EXIT_SUCCESS);
         case 'e': /* env_path */
             env->path = cutil_strdup(cutil_optarg);
@@ -168,8 +172,8 @@ _get_settings(const struct _env *env, int argc, char **argv)
     if (env->path != NULL) {
         const char *const fname
           = (env->load != NULL) ? env->load : DEFAULT_SETTINGS_FILENAME;
-        char *const fname_full = Util_concat_paths(env->path, fname);
-        JsonUtil_read(settings, fname_full, &Settings_fill_from_Json_void);
+        char *const fname_full = util_concat_paths(env->path, fname);
+        jsonutil_read(settings, fname_full, &Settings_fill_from_Json_void);
         free(fname_full);
     }
 
@@ -236,8 +240,8 @@ _get_settings(const struct _env *env, int argc, char **argv)
     }
 
     if (env->path != NULL && env->save != NULL) {
-        char *const fname_full = Util_concat_paths(env->path, env->save);
-        JsonUtil_write(settings, fname_full, &Settings_to_Json_void);
+        char *const fname_full = util_concat_paths(env->path, env->save);
+        jsonutil_write(settings, fname_full, &Settings_to_Json_void);
         free(fname_full);
     }
 

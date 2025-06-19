@@ -111,7 +111,7 @@ _imageData_init_view_fname(ImageData *imgdata)
 {
     const char *const path = App_get_env_path();
     const char *const fname = imgdata->settings->view_file;
-    imgdata->view_fname = Util_concat_paths(path, fname);
+    imgdata->view_fname = util_concat_paths(path, fname);
 }
 
 static ImageData *
@@ -312,7 +312,7 @@ _imageData_register_zoom(ImageData *imgdata, int8_t stages)
         (stages > 0) ? mpf_mul(upp, upp, buf) : mpf_div(upp, upp, buf);
     }
 
-    const mp_bitcnt_t new_prec = Util_calculate_new_prec(upp);
+    const mp_bitcnt_t new_prec = util_calculate_new_prec(upp);
     if (new_prec != imgdata->prec) {
         _imageData_set_prec(imgdata, new_prec);
     }
@@ -373,7 +373,7 @@ _imageData_register_view_save(ImageData *imgdata)
     View *const view = imgdata->view;
     char *const fname = imgdata->view_fname;
 
-    JsonUtil_write(view, fname, &View_to_Json_void);
+    jsonutil_write(view, fname, &View_to_Json_void);
 
     cutil_log_debug("Saved view");
 }
@@ -384,7 +384,7 @@ _imageData_register_view_load(ImageData *imgdata)
     View *const view = imgdata->view;
     char *const fname = imgdata->view_fname;
 
-    JsonUtil_read(view, fname, &View_fill_from_Json_void);
+    jsonutil_read(view, fname, &View_fill_from_Json_void);
     PixelChunk_callback *const callback = &PixelChunk_callback_reset;
     _imageData_apply_to_all_chunks(imgdata, callback, NULL);
 

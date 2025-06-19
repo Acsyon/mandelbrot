@@ -97,7 +97,7 @@ View_to_Json(const View *view)
 
 #define MEMBER_TO_JSON(MEMBER)                                                 \
     do {                                                                       \
-        char *const str = Util_mpf_to_str_base10(view->MEMBER);                \
+        char *const str = util_mpf_to_str_base10(view->MEMBER);                \
         const int status = Json_add_str(json, #MEMBER, str);                   \
         if (status != EXIT_SUCCESS) {                                          \
             cutil_log_error(                                                   \

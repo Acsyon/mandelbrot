@@ -102,7 +102,7 @@ Json_add_str(Json *json, const char *elem, const char *var)
 }
 
 void
-JsonUtil_fill_from_string(
+jsonutil_fill_from_string(
   void *obj, const char *str, JsonUtilReadCallback *callback
 )
 {
@@ -114,27 +114,27 @@ JsonUtil_fill_from_string(
 }
 
 void
-JsonUtil_fread(void *obj, FILE *in, JsonUtilReadCallback *callback)
+jsonutil_fread(void *obj, FILE *in, JsonUtilReadCallback *callback)
 {
-    char *const str = Util_file_to_str(in);
-    JsonUtil_fill_from_string(obj, str, callback);
+    char *const str = util_file_to_str(in);
+    jsonutil_fill_from_string(obj, str, callback);
     free(str);
 }
 
 void
-JsonUtil_read(void *obj, const char *fname, JsonUtilReadCallback *callback)
+jsonutil_read(void *obj, const char *fname, JsonUtilReadCallback *callback)
 {
     FILE *const in = fopen(fname, "r");
     if (in == NULL) {
         cutil_log_error("Cannot open file '%s'", fname);
         return;
     }
-    JsonUtil_fread(obj, in, callback);
+    jsonutil_fread(obj, in, callback);
     fclose(in);
 }
 
 char *
-JsonUtil_to_string(const void *obj, JsonUtilWriteCallback *callback)
+jsonutil_to_string(const void *obj, JsonUtilWriteCallback *callback)
 {
     Json *const json = callback(obj);
     if (json == NULL) {
@@ -146,9 +146,9 @@ JsonUtil_to_string(const void *obj, JsonUtilWriteCallback *callback)
 }
 
 void
-JsonUtil_fwrite(const void *obj, FILE *out, JsonUtilWriteCallback *callback)
+jsonutil_fwrite(const void *obj, FILE *out, JsonUtilWriteCallback *callback)
 {
-    char *const str = JsonUtil_to_string(obj, callback);
+    char *const str = jsonutil_to_string(obj, callback);
     if (str == NULL) {
         return;
     }
@@ -157,7 +157,7 @@ JsonUtil_fwrite(const void *obj, FILE *out, JsonUtilWriteCallback *callback)
 }
 
 void
-JsonUtil_write(
+jsonutil_write(
   const void *obj, const char *fname, JsonUtilWriteCallback *callback
 )
 {
@@ -166,6 +166,6 @@ JsonUtil_write(
         cutil_log_error("Cannot open file '%s'", fname);
         return;
     }
-    JsonUtil_fwrite(obj, out, callback);
+    jsonutil_fwrite(obj, out, callback);
     fclose(out);
 }

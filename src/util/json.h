@@ -154,7 +154,7 @@ JsonUtilReadCallback(void *obj, const Json *json);
  * @param[in] callback callback function for reading
  */
 void
-JsonUtil_fill_from_string(
+jsonutil_fill_from_string(
   void *obj, const char *str, JsonUtilReadCallback *callback
 );
 
@@ -167,7 +167,7 @@ JsonUtil_fill_from_string(
  * @param[in] callback callback function for reading
  */
 void
-JsonUtil_fread(void *obj, FILE *in, JsonUtilReadCallback *callback);
+jsonutil_fread(void *obj, FILE *in, JsonUtilReadCallback *callback);
 
 /**
  * Fills object `obj` with the values in the JSON config file in `fname`.
@@ -178,7 +178,7 @@ JsonUtil_fread(void *obj, FILE *in, JsonUtilReadCallback *callback);
  * @param[in] callback callback function for reading
  */
 void
-JsonUtil_read(void *obj, const char *fname, JsonUtilReadCallback *callback);
+jsonutil_read(void *obj, const char *fname, JsonUtilReadCallback *callback);
 
 /**
  * Typedef for JSON writing callback function
@@ -200,7 +200,7 @@ JsonUtilWriteCallback(const void *obj);
  * @return newly malloc'd string containing `obj` as a JSON object
  */
 char *
-JsonUtil_to_string(const void *obj, JsonUtilWriteCallback *callback);
+jsonutil_to_string(const void *obj, JsonUtilWriteCallback *callback);
 
 /**
  * Writes `obj` as a JSON object to output stream `out`. Writing is performed by
@@ -211,7 +211,7 @@ JsonUtil_to_string(const void *obj, JsonUtilWriteCallback *callback);
  * @param[in] callback callback function for writing
  */
 void
-JsonUtil_fwrite(const void *obj, FILE *out, JsonUtilWriteCallback *callback);
+jsonutil_fwrite(const void *obj, FILE *out, JsonUtilWriteCallback *callback);
 
 /**
  * Writes `obj` as a JSON object to file `fname`. Writing is performed by the
@@ -222,7 +222,7 @@ JsonUtil_fwrite(const void *obj, FILE *out, JsonUtilWriteCallback *callback);
  * @param[in] callback callback function for writing
  */
 void
-JsonUtil_write(
+jsonutil_write(
   const void *obj, const char *fname, JsonUtilWriteCallback *callback
 );
 
