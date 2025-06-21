@@ -55,9 +55,9 @@ GraphicsData_resume_action(GraphicsData *gfxdata, unsigned int mseconds)
 }
 
 void
-GraphicsData_perform_action(GraphicsData *gfxdata, enum Key key)
+GraphicsData_perform_action(GraphicsData *gfxdata)
 {
-    ImageData_perform_action(gfxdata->imgdata, key);
+    ImageData_perform_action(gfxdata->imgdata);
 }
 
 const float *
@@ -72,8 +72,3 @@ GraphicsData_has_changed(const GraphicsData *gfxdata)
     return ImageData_has_changed(gfxdata->imgdata);
 }
 
-bool
-GraphicsData_is_working(const GraphicsData *gfxdata)
-{
-    return ImageData_is_working(gfxdata->imgdata);
-}

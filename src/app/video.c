@@ -1,6 +1,7 @@
 #include <app/video.h>
 
 #include <SDL2/SDL.h>
+#include <omp.h>
 
 #include <cutil/io/log.h>
 #include <cutil/std/stdbool.h>
@@ -106,7 +107,7 @@ _video_write_framebuffer(Video *video)
     SDL_LockSurface(video->image);
 
     const Settings *const settings = video->settings;
-    const GraphicsData *const gfxdata = video->gfxdata;
+    GraphicsData *const gfxdata = video->gfxdata;
     const uint16_t width = settings->width;
     const uint16_t height = settings->height;
 
@@ -203,6 +204,7 @@ _video_process_video_actions(Video *video)
         switch (key) {
         case KEY_QUIT:
             video->should_close = true;
+            GraphicsData_register_action(video->gfxdata, key);
             return;
         case KEY_CHANGE_PALETTE: {
             _video_cycle_palette(video);
@@ -216,22 +218,66 @@ _video_process_video_actions(Video *video)
     }
 }
 
+static inline void
+_video_process_data_actions(Video *video)
+{
+    enum Key key;
+    while ((key = KeyBuffer_pop_key(video->keybuf, KEYCATEGORY_DATA))
+           != KEY_INVALID)
+    {
+        GraphicsData_register_action(video->gfxdata, key);
+    }
+}
+
+static inline void
+_video_perform_client_actions(Video *video)
+{
+    _video_draw_image(video);
+    _video_register_input_events(video);
+    _video_process_video_actions(video);
+    _video_process_data_actions(video);
+}
+
+static void
+_video_loop_sequential(Video *video)
+{
+    while (!video->should_close) {
+        _video_perform_client_actions(video);
+
+        const unsigned int delta = _video_get_frame_delta(video);
+        GraphicsData_resume_action(video->gfxdata, delta);
+    }
+}
+
+static void
+_video_loop_concurrent(Video *video)
+{
+    omp_set_nested(1);
+#pragma omp parallel
+    {
+#pragma omp master
+        {
+            while (!video->should_close) {
+                _video_perform_client_actions(video);
+            }
+        }
+#pragma omp single
+        {
+            while (!video->should_close) {
+                GraphicsData_perform_action(video->gfxdata);
+            }
+        }
+    }
+}
+
 static void
 _video_loop(Video *video)
 {
-    while (!video->should_close) {
-        _video_draw_image(video);
-        _video_register_input_events(video);
-        _video_process_video_actions(video);
-
-        enum Key key;
-        while ((key = KeyBuffer_pop_key(video->keybuf, KEYCATEGORY_DATA))
-               != KEY_INVALID)
-        {
-            GraphicsData_register_action(video->gfxdata, key);
-        }
-        const unsigned int delta = _video_get_frame_delta(video);
-        GraphicsData_resume_action(video->gfxdata, delta);
+    const int tnum = omp_get_max_threads();
+    if (tnum == 1) {
+        _video_loop_sequential(video);
+    } else {
+        _video_loop_concurrent(video);
     }
 }
 
