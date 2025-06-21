@@ -45,7 +45,8 @@ struct _imageData {
     uint64_t target_ticks;
     char *view_fname;
     bool has_changed;
-    bool is_working;
+    bool is_complete;
+    bool should_close;
 };
 
 static void
@@ -123,7 +124,8 @@ _imageData_alloc(const Settings *settings)
     _imageData_init_chunks(imgdata);
     _imageData_init_view_fname(imgdata);
     imgdata->has_changed = false;
-    imgdata->is_working = false;
+    imgdata->should_close = false;
+    imgdata->is_complete = false;
 
     return imgdata;
 }
@@ -274,6 +276,43 @@ _imageData_update_chunk_pixel(
 }
 
 static void
+_imageData_set_framebuf_pixel(
+  ImageData *imgdata,
+  const PixelChunk *chunk,
+  uint16_t idx_px_re,
+  uint16_t idx_px_im
+)
+{
+    const ChunkData *const chunks = &imgdata->chunks;
+    const ChunkParams *const params = &chunks->params;
+
+    const uint16_t stride = params->stride;
+    const uint32_t idx_px = idx_px_re * stride + idx_px_im;
+    const PixelData *const px = &chunk->data[idx_px];
+
+    const uint16_t idx_re = chunk->idx_re * params->num_px_re + idx_px_re;
+    const uint16_t idx_im = chunk->idx_im * params->num_px_im + idx_px_im;
+    const uint32_t idx_abs = idx_re * stride + idx_im;
+
+    imgdata->framebuf[idx_abs] = px->itrs;
+}
+
+static void
+_imageData_set_framebuf_chunk(ImageData *imgdata, const PixelChunk *chunk)
+{
+    const ChunkData *const chunks = &imgdata->chunks;
+    const ChunkParams *const params = &chunks->params;
+    const uint16_t num_px_re = params->num_px_re;
+    const uint16_t num_px_im = params->num_px_im;
+
+    for (uint16_t idx_px_re = 0; idx_px_re < num_px_re; ++idx_px_re) {
+        for (uint16_t idx_px_im = 0; idx_px_im < num_px_im; ++idx_px_im) {
+            _imageData_set_framebuf_pixel(imgdata, chunk, idx_px_re, idx_px_im);
+        }
+    }
+}
+
+static void
 _imageData_apply_to_all_chunks(
   ImageData *imgdata, PixelChunk_callback *callback, const void *vparams
 )
@@ -283,10 +322,14 @@ _imageData_apply_to_all_chunks(
     int idx;
 #pragma omp parallel for private(idx)
     for (idx = 0; idx < num_tot; ++idx) {
+        if (imgdata->should_close) {
+            continue;
+        }
         PixelChunk *const chunk = &chunks->data[idx];
         const ChunkCallbackParams params
           = {.imgdata = imgdata, .chunks = chunks, .vparams = vparams};
         callback(chunk, &params);
+        _imageData_set_framebuf_chunk(imgdata, chunk);
     }
 }
 
@@ -383,48 +426,11 @@ _imageData_register_view_load(ImageData *imgdata)
     cutil_log_debug("Loaded view");
 }
 
-/**
- * Updates all pixels in framebuffer of `imgdata`.
- */
-static void
-_imageData_update_framebuffer(ImageData *imgdata)
-{
-    const ChunkData *const chunks = &imgdata->chunks;
-    const uint8_t num_chnks_re = chunks->num_re;
-    const uint8_t num_chnks_im = chunks->num_im;
-    const uint16_t num_chnks_tot = num_chnks_re * num_chnks_im;
-
-    const ChunkParams *const params = &chunks->params;
-    const uint16_t stride = params->stride;
-    const uint16_t num_px_re = params->num_px_re;
-    const uint16_t num_px_im = params->num_px_im;
-
-    int idx_chnk;
-#pragma omp parallel for private(idx_chnk)
-    for (idx_chnk = 0; idx_chnk < num_chnks_tot; ++idx_chnk) {
-        const PixelChunk *const chunk = &chunks->data[idx_chnk];
-        for (uint16_t idx_px_re = 0; idx_px_re < num_px_re; ++idx_px_re) {
-            for (uint16_t idx_px_im = 0; idx_px_im < num_px_im; ++idx_px_im) {
-                const uint32_t idx_rel = idx_px_re * stride + idx_px_im;
-                const PixelData *const px = &chunk->data[idx_rel];
-
-                const uint16_t idx_abs_re
-                  = chunk->idx_re * num_px_re + idx_px_re;
-                const uint16_t idx_abs_im
-                  = chunk->idx_im * num_px_im + idx_px_im;
-                const uint32_t idx_abs = idx_abs_re * stride + idx_abs_im;
-                imgdata->framebuf[idx_abs] = px->itrs;
-            }
-        }
-    }
-}
-
 static void
 _imageData_update_pixels(ImageData *imgdata)
 {
     PixelChunk_callback *const callback = &PixelChunk_callback_update;
     _imageData_apply_to_all_chunks(imgdata, callback, imgdata);
-    _imageData_update_framebuffer(imgdata);
 }
 
 static bool
@@ -444,7 +450,9 @@ _imageData_is_complete(const ImageData *imgdata)
 ImageData *
 ImageData_create(const Settings *settings)
 {
-    return _imageData_alloc(settings);
+    ImageData *const imgdata = _imageData_alloc(settings);
+    _imageData_register_reset(imgdata);
+    return imgdata;
 }
 
 void
@@ -488,19 +496,23 @@ ImageData_register_action(ImageData *imgdata, enum Key key)
     case KEY_VIEW_LOAD: {
         _imageData_register_view_load(imgdata);
     } break;
+    case KEY_QUIT: {
+        imgdata->should_close = true;
+    } break;
     default:
-        break;
+        return;
     }
+    imgdata->is_complete = false;
 }
 
 void
 _imageData_resume_action_aux(ImageData *imgdata, uint64_t target_ticks)
 {
-    imgdata->is_working = true;
+    CUTIL_RETURN_IF_VAL(imgdata->is_complete, true);
     imgdata->target_ticks = target_ticks;
     _imageData_update_pixels(imgdata);
     if (_imageData_is_complete(imgdata)) {
-        imgdata->is_working = false;
+        imgdata->is_complete = true;
     }
 }
 
@@ -511,18 +523,14 @@ ImageData_resume_action(ImageData *imgdata, unsigned int mseconds)
 }
 
 void
-ImageData_perform_action(ImageData *imgdata, enum Key key)
+ImageData_perform_action(ImageData *imgdata)
 {
-    CUTIL_RETURN_IF_VAL(imgdata->is_working, true);
-    ImageData_register_action(imgdata, key);
     _imageData_resume_action_aux(imgdata, UINT64_MAX);
 }
 
 void
 ImageData_update_chunk(ImageData *imgdata, PixelChunk *chunk)
 {
-    CUTIL_RETURN_IF_VAL(chunk->state, CHUNK_STATE_VALID);
-
     const uint64_t target_ticks = imgdata->target_ticks;
     const ChunkData *const chunks = &imgdata->chunks;
     const ChunkParams *const params = &chunks->params;
@@ -555,8 +563,3 @@ ImageData_has_changed(ImageData *imgdata)
     return res;
 }
 
-bool
-ImageData_is_working(const ImageData *imgdata)
-{
-    return imgdata->is_working;
-}

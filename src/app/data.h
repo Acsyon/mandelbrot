@@ -51,13 +51,12 @@ void
 GraphicsData_resume_action(GraphicsData *gfxdata, unsigned int mseconds);
 
 /**
- * Performs action according to keypress in `key` to `gfxdata`.
+ * Performs registered action on `gfxdata`.
  *
  * @param[in] gfxdata GraphicsData object to perform action on
- * @param[in] key pressed key
  */
 void
-GraphicsData_perform_action(GraphicsData *gfxdata, enum Key key);
+GraphicsData_perform_action(GraphicsData *gfxdata);
 
 /**
  * Returns array of pixel data in `gfxdata`.
@@ -79,16 +78,5 @@ GraphicsData_get_pixel_data(const GraphicsData *gfxdata);
  */
 bool
 GraphicsData_has_changed(const GraphicsData *gfxdata);
-
-/**
- * Returns whether `gfxdata` is currently working, i.e., whether there are
- * calculations going on.
- *
- * @param[in] gfxdata GraphicsData object to check for working state
- *
- * @return Is `gfxdata` currently working?
- */
-bool
-GraphicsData_is_working(const GraphicsData *gfxdata);
 
 #endif /* MANDELBROT_APP_DATA_H_INCLUDED */

@@ -53,13 +53,12 @@ void
 ImageData_resume_action(ImageData *imgdata, unsigned int mseconds);
 
 /**
- * Performs action according to keypress in `key` to `imgdata`.
+ * Performs registered action on `imgdata`.
  *
  * @param[in] imgdata ImageData object to perform action on
- * @param[in] key pressed key
  */
 void
-ImageData_perform_action(ImageData *imgdata, enum Key key);
+ImageData_perform_action(ImageData *imgdata);
 
 /**
  * Updates all pixels in `chunk` of `imgdata`.
@@ -90,16 +89,5 @@ ImageData_get_pixel_data(const ImageData *imgdata);
  */
 bool
 ImageData_has_changed(ImageData *imgdata);
-
-/**
- * Returns whether `imgdata` is currently working, i.e., whether there there are
- * calculations going on.
- *
- * @param[in] imgdata ImageData object to check for working state
- *
- * @return Is `imgdata` currently working?
- */
-bool
-ImageData_is_working(const ImageData *imgdata);
 
 #endif /* MANDELBROT_DATA_IMAGE_H_INCLUDED */
