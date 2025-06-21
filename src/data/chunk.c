@@ -82,8 +82,14 @@ ChunkData_clear(ChunkData *chunks)
     free(chunks->data);
 }
 
-void
-PixelChunk_invalidate_all_pixels(PixelChunk *chunk, const ChunkData *chunks)
+/**
+ * Invalidates all pixels in `chunk` in `chunks`.
+ *
+ * @param[in] chunk PixelChunk object to invalidate all pixels of
+ * @param[in] chunks ChunkData object to get chunk parameters from
+ */
+static void
+_pixelChunk_invalidate_all_pixels(PixelChunk *chunk, const ChunkData *chunks)
 {
     const ChunkParams *const params = &chunks->params;
     const uint16_t num_px_re = params->num_px_re;
@@ -103,29 +109,25 @@ PixelChunk_invalidate_all_pixels(PixelChunk *chunk, const ChunkData *chunks)
 }
 
 void
-PixelChunk_zoom(PixelChunk *chunk, const ChunkData *chunks, int8_t stages)
+PixelChunk_zoom(PixelChunk *chunk, int8_t stages)
 {
     CUTIL_UNUSED(chunk);
-    CUTIL_UNUSED(chunks);
     CUTIL_UNUSED(stages);
 }
 
 void
-PixelChunk_callback_update(
-  PixelChunk *chunk, const ChunkData *chunks, const void *vparams
-)
+PixelChunk_callback_update(PixelChunk *chunk, const ChunkCallbackParams *params)
 {
-    CUTIL_UNUSED(chunks);
-    const ImageData *const imgdata = vparams;
+    ImageData *const imgdata = params->imgdata;
     ImageData_update_chunk(imgdata, chunk);
 }
 
 void
-PixelChunk_callback_shift(
-  PixelChunk *chunk, const ChunkData *chunks, const void *vparams
-)
+PixelChunk_callback_shift(PixelChunk *chunk, const ChunkCallbackParams *params)
 {
-    const int8_t *const shifts = vparams;
+    const ChunkData *const chunks = params->chunks;
+
+    const int8_t *const shifts = params->vparams;
     const int8_t shift_re = shifts[0];
     const int8_t shift_im = shifts[1];
 
@@ -133,25 +135,23 @@ PixelChunk_callback_shift(
     _pixelChunk_shift_im(chunk, chunks, shift_im);
 
     if (chunk->state == CHUNK_STATE_INVALID) {
-        PixelChunk_invalidate_all_pixels(chunk, chunks);
+        _pixelChunk_invalidate_all_pixels(chunk, chunks);
     }
 }
 
 void
-PixelChunk_callback_zoom(
-  PixelChunk *chunk, const ChunkData *chunks, const void *vparams
-)
+PixelChunk_callback_zoom(PixelChunk *chunk, const ChunkCallbackParams *params)
 {
-    const int8_t stages = *(const int8_t *) vparams;
-    PixelChunk_zoom(chunk, chunks, stages);
-    PixelChunk_invalidate_all_pixels(chunk, chunks);
+    const ChunkData *const chunks = params->chunks;
+
+    const int8_t stages = *(const int8_t *) params->vparams;
+    PixelChunk_zoom(chunk, stages);
+    _pixelChunk_invalidate_all_pixels(chunk, chunks);
 }
 
 void
-PixelChunk_callback_reset(
-  PixelChunk *chunk, const ChunkData *chunks, const void *vparams
-)
+PixelChunk_callback_reset(PixelChunk *chunk, const ChunkCallbackParams *params)
 {
-    CUTIL_UNUSED(vparams);
-    PixelChunk_invalidate_all_pixels(chunk, chunks);
+    const ChunkData *const chunks = params->chunks;
+    _pixelChunk_invalidate_all_pixels(chunk, chunks);
 }

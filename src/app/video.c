@@ -14,13 +14,23 @@
 #include <util/sys.h>
 #include <visuals/palette.h>
 
+#define MSECONDS_PER_SEC 1000U
+
 struct _video {
     Settings *settings;
     GraphicsData *gfxdata;
+
     SDL_Window *window;
     SDL_Surface *surface;
     SDL_Surface *image;
+
     KeyBuffer *keybuf;
+    bool should_close;
+    bool has_changed;
+
+    unsigned int msecs_per_frame;
+    uint64_t last_frame;
+
     Palette_fnc *palette;
     const void *palette_params;
     PaletteCycler *cycler;
@@ -51,10 +61,18 @@ _video_alloc(const Settings *settings, GraphicsData *gfxdata)
 
     video->settings = Settings_duplicate(settings);
     video->gfxdata = gfxdata;
+
     video->window = NULL;
     video->surface = NULL;
     video->image = NULL;
+
     video->keybuf = KeyBuffer_alloc();
+    video->should_close = false;
+    video->has_changed = true;
+
+    video->msecs_per_frame = MSECONDS_PER_SEC / settings->fps;
+    video->last_frame = SDL_GetTicks64();
+
     video->palette_params = NULL;
     video->cycler = PaletteCycler_create(
       PALETTE_FUNCTIONS, PALETTE_FUNCTION_COUNT, settings->palette_idx
@@ -83,12 +101,6 @@ _video_alloc(const Settings *settings, GraphicsData *gfxdata)
 }
 
 static void
-_video_draw_image(Video *video)
-{
-    SDL_BlitSurface(video->image, NULL, video->surface, NULL);
-}
-
-static void
 _video_write_framebuffer(Video *video)
 {
     SDL_LockSurface(video->image);
@@ -100,16 +112,37 @@ _video_write_framebuffer(Video *video)
 
     const float *const pxdata = GraphicsData_get_pixel_data(gfxdata);
     uint32_t *const buf = video->image->pixels;
-    int i;
-#pragma omp parallel for collapse(2)
-    for (i = 0; i < width; ++i) {
+    for (uint16_t i = 0; i < width; ++i) {
         for (uint16_t j = 0; j < height; ++j) {
-            buf[j * width + i]
-              = video->palette(pxdata[i * height + j], video->palette_params);
+            const float pxval = pxdata[i * height + j];
+            buf[j * width + i] = video->palette(pxval, video->palette_params);
         }
     }
 
     SDL_UnlockSurface(video->image);
+}
+
+static unsigned int
+_video_get_frame_delta(const Video *video)
+{
+    const uint64_t next_frame = video->last_frame + video->msecs_per_frame;
+    const uint64_t curr_frame = SDL_GetTicks64();
+    return (next_frame > curr_frame) ? (next_frame - curr_frame) : 0U;
+}
+
+static void
+_video_draw_image(Video *video)
+{
+    if (video->has_changed || GraphicsData_has_changed(video->gfxdata)) {
+        _video_write_framebuffer(video);
+        video->has_changed = false;
+    }
+    SDL_BlitSurface(video->image, NULL, video->surface, NULL);
+    SDL_UpdateWindowSurface(video->window);
+
+    const unsigned int delta = _video_get_frame_delta(video);
+    msleep(delta);
+    video->last_frame = SDL_GetTicks64();
 }
 
 static void
@@ -117,7 +150,7 @@ _video_cycle_palette(Video *video)
 {
     video->palette = PaletteCycler_cycle_palette(video->cycler);
     video->palette_params = NULL;
-    _video_write_framebuffer(video);
+    video->has_changed = true;
 }
 
 static void
@@ -127,11 +160,11 @@ _video_advance_trip_mode(Video *video)
     TripModeGenerator_advance(tripgen);
     video->palette = TripModeGenerator_get_palette(tripgen);
     video->palette_params = TripModeGenerator_get_params(tripgen);
-    _video_write_framebuffer(video);
+    video->has_changed = true;
 }
 
 static inline void
-_video_register_events(Video *video)
+_video_register_input_events(Video *video)
 {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -159,12 +192,9 @@ _video_register_events(Video *video)
  * mode" smooth.
  *
  * @param[in] video Video object to process video actions of
- * @param[in] msecs_per_frame milliseconds per frame
- *
- * @return should the application close?
  */
-static inline bool
-_video_process_video_actions(Video *video, int msecs_per_frame)
+static inline void
+_video_process_video_actions(Video *video)
 {
     enum Key key;
     while ((key = KeyBuffer_pop_key(video->keybuf, KEYCATEGORY_VIDEO))
@@ -172,50 +202,36 @@ _video_process_video_actions(Video *video, int msecs_per_frame)
     {
         switch (key) {
         case KEY_QUIT:
-            return true;
+            video->should_close = true;
+            return;
         case KEY_CHANGE_PALETTE: {
             _video_cycle_palette(video);
         } break;
         case KEY_TRIP_MODE: {
             _video_advance_trip_mode(video);
-            msleep(msecs_per_frame);
         } break;
         default:
             break;
         }
-    }
-    return false;
-}
-
-static inline void
-_video_process_data_actions(Video *video, GraphicsData *gfxdata)
-{
-    enum Key key;
-    while ((key = KeyBuffer_pop_key(video->keybuf, KEYCATEGORY_DATA))
-           != KEY_INVALID)
-    {
-        GraphicsData_register_action(gfxdata, key);
     }
 }
 
 static void
 _video_loop(Video *video)
 {
-    GraphicsData *const gfxdata = video->gfxdata;
-    const Settings *const settings = video->settings;
-    const unsigned int msecs_per_frame = 1000 / settings->fps;
-    for (;;) {
-        if (GraphicsData_perform_action(gfxdata, msecs_per_frame)) {
-            _video_write_framebuffer(video);
-        }
+    while (!video->should_close) {
         _video_draw_image(video);
-        SDL_UpdateWindowSurface(video->window);
-        _video_register_events(video);
-        const bool close = _video_process_video_actions(video, msecs_per_frame);
-        if (close) {
-            return;
+        _video_register_input_events(video);
+        _video_process_video_actions(video);
+
+        enum Key key;
+        while ((key = KeyBuffer_pop_key(video->keybuf, KEYCATEGORY_DATA))
+               != KEY_INVALID)
+        {
+            GraphicsData_register_action(video->gfxdata, key);
         }
-        _video_process_data_actions(video, gfxdata);
+        const unsigned int delta = _video_get_frame_delta(video);
+        GraphicsData_resume_action(video->gfxdata, delta);
     }
 }
 

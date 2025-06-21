@@ -48,14 +48,32 @@ GraphicsData_register_action(GraphicsData *gfxdata, enum Key key)
     ImageData_register_action(gfxdata->imgdata, key);
 }
 
-int
-GraphicsData_perform_action(GraphicsData *gfxdata, unsigned int mseconds)
+void
+GraphicsData_resume_action(GraphicsData *gfxdata, unsigned int mseconds)
 {
-    return ImageData_perform_action(gfxdata->imgdata, mseconds);
+    ImageData_resume_action(gfxdata->imgdata, mseconds);
+}
+
+void
+GraphicsData_perform_action(GraphicsData *gfxdata, enum Key key)
+{
+    ImageData_perform_action(gfxdata->imgdata, key);
 }
 
 const float *
 GraphicsData_get_pixel_data(const GraphicsData *gfxdata)
 {
     return ImageData_get_pixel_data(gfxdata->imgdata);
+}
+
+bool
+GraphicsData_has_changed(const GraphicsData *gfxdata)
+{
+    return ImageData_has_changed(gfxdata->imgdata);
+}
+
+bool
+GraphicsData_is_working(const GraphicsData *gfxdata)
+{
+    return ImageData_is_working(gfxdata->imgdata);
 }

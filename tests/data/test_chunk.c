@@ -66,7 +66,7 @@ _should_initializeChunkDataCorrectly_when_provideSettingsAndPixelData(void)
 }
 
 void
-_should_invalidateAllPixels_when_callInvalidateAllPixels(void)
+_should_invalidateAllPixels_when_callReset(void)
 {
     /* Arrange */
     Settings settings = {0};
@@ -80,9 +80,10 @@ _should_invalidateAllPixels_when_callInvalidateAllPixels(void)
     ChunkData_init(&chunks, &settings, px);
 
     PixelChunk *const chunk = &chunks.data[0];
+    const ChunkCallbackParams params = {.chunks = &chunks};
 
     /* Act */
-    PixelChunk_invalidate_all_pixels(chunk, &chunks);
+    PixelChunk_callback_reset(chunk, &params);
 
     /* Assert */
     for (int idx_px_re = 0; idx_px_re < chunks.params.num_px_re; ++idx_px_re) {
@@ -119,9 +120,10 @@ _should_shiftChunkCorrectly_when_provideShiftParameters(void)
 
     PixelChunk *const chunk = &chunks.data[0];
     const int8_t shifts[2] = {-1, 1};
+    const ChunkCallbackParams params = {.chunks = &chunks, .vparams = shifts};
 
     /* Act */
-    PixelChunk_callback_shift(chunk, &chunks, shifts);
+    PixelChunk_callback_shift(chunk, &params);
 
     /* Assert */
     TEST_ASSERT_EQUAL_INT(1, chunk->idx_re);
@@ -148,9 +150,10 @@ _should_resetChunkCorrectly_when_callResetCallback(void)
     ChunkData_init(&chunks, &settings, px);
 
     PixelChunk *const chunk = &chunks.data[0];
+    const ChunkCallbackParams params = {.chunks = &chunks};
 
     /* Act */
-    PixelChunk_callback_reset(chunk, &chunks, NULL);
+    PixelChunk_callback_reset(chunk, &params);
 
     /* Assert */
     for (int idx_px_re = 0; idx_px_re < chunks.params.num_px_re; ++idx_px_re) {
@@ -188,7 +191,7 @@ main(void)
     RUN_TEST(
       _should_initializeChunkDataCorrectly_when_provideSettingsAndPixelData
     );
-    RUN_TEST(_should_invalidateAllPixels_when_callInvalidateAllPixels);
+    RUN_TEST(_should_invalidateAllPixels_when_callReset);
     RUN_TEST(_should_shiftChunkCorrectly_when_provideShiftParameters);
     RUN_TEST(_should_resetChunkCorrectly_when_callResetCallback);
     

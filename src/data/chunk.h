@@ -76,49 +76,44 @@ void
 ChunkData_clear(ChunkData *chunks);
 
 /**
- * Invalidates all pixels in `chunk` in `chunks`.
- *
- * @param[in] chunk PixelChunk object to invalidate all pixels of
- * @param[in] chunks ChunkData object to get chunk parameters from
- */
-void
-PixelChunk_invalidate_all_pixels(PixelChunk *chunk, const ChunkData *chunks);
-
-/**
  * Zooms `chunk` in `chunks` by `stages` where each stage corresponds to zooming
  * by the zoom factor. A positive zoom stage amounts to zooming in. Currently,
  * this function is a no op as this functionality is handled by setting the
  * units per pixel.
  *
  * @param[in] chunk PixelChunk object to zoom
- * @param[in] chunks ChunkData object to get chunk parameters from
  * @param[in] stages zoom stages
  */
 void
-PixelChunk_zoom(PixelChunk *chunk, const ChunkData *chunks, int8_t stages);
+PixelChunk_zoom(PixelChunk *chunk, int8_t stages);
+
+/**
+ * Auxiliary struct for parameters of callback function
+ */
+typedef struct {
+    struct _imageData *imgdata;
+    const ChunkData *chunks;
+    const void *vparams;
+} ChunkCallbackParams;
 
 /**
  * Typedef for PixelChunk action callback function
  *
  * @param[in] chunk PixelChunk object to perform action on
- * @param[in] chunks ChunkData object to get chunk parameters from
- * @param[in] vparams parameters for callback function
+ * @param[in] params parameters for callback function
  */
 typedef void
-PixelChunk_callback(
-  PixelChunk *chunk, const ChunkData *chunks, const void *vparams
-);
+PixelChunk_callback(PixelChunk *chunk, const ChunkCallbackParams *params);
 
 /**
  * Updates all pixels of `chunk`.
  *
  * @param[in] chunk PixelChunk object to update
- * @param[in] chunks ChunkData object to get chunk parameters from
- * @param[in] vparams ImageData object the chunks live in
+ * @param[in] vparams unused
  */
 void
 PixelChunk_callback_update(
-  PixelChunk *chunk, const ChunkData *chunks, const void *vparams
+  PixelChunk *chunk, const ChunkCallbackParams *params
 );
 
 /**
@@ -127,13 +122,10 @@ PixelChunk_callback_update(
  * element, respectively.
  *
  * @param[in] chunk PixelChunk object to shift
- * @param[in] chunks ChunkData object to get chunk parameters from
  * @param[in] vparams integer array of shifts
  */
 void
-PixelChunk_callback_shift(
-  PixelChunk *chunk, const ChunkData *chunks, const void *vparams
-);
+PixelChunk_callback_shift(PixelChunk *chunk, const ChunkCallbackParams *params);
 
 /**
  * Zooms `chunk` according to `vparams`, which is an integer describing the
@@ -141,24 +133,18 @@ PixelChunk_callback_shift(
  * positive zoom stage amounts to zooming in.
  *
  * @param[in] chunk PixelChunk object to zoom
- * @param[in] chunks ChunkData object to get chunk parameters from
  * @param[in] vparams zoom stage
  */
 void
-PixelChunk_callback_zoom(
-  PixelChunk *chunk, const ChunkData *chunks, const void *vparams
-);
+PixelChunk_callback_zoom(PixelChunk *chunk, const ChunkCallbackParams *params);
 
 /**
  * Resets, i.e., invalidates, all pixels of `chunk`.
  *
  * @param[in] chunk PixelChunk object to reset
- * @param[in] chunks ChunkData object to get chunk parameters from
  * @param[in] vparams unused
  */
 void
-PixelChunk_callback_reset(
-  PixelChunk *chunk, const ChunkData *chunks, const void *vparams
-);
+PixelChunk_callback_reset(PixelChunk *chunk, const ChunkCallbackParams *params);
 
 #endif /* MANDELBROT_DATA_CHUNK_H_INCLUDED */

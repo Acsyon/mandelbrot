@@ -30,17 +30,9 @@
 #define SHIFT_STAGES_NEG INT8_C(-SHIFT_STAGES)
 
 /**
- * Possible data states
- */
-enum DataState {
-    DATA_STATE_WORKING = -1,
-    DATA_STATE_IDLE = 0,
-};
-
-/**
  * ImageData container struct
  */
-struct ImageData {
+struct _imageData {
     Settings *settings;
     mp_bitcnt_t prec;
     View *view;
@@ -50,9 +42,10 @@ struct ImageData {
     PixelDataBuffer *tbuf;
     ChunkData chunks;
     float *framebuf;
-    enum DataState state;
     uint64_t target_ticks;
     char *view_fname;
+    bool has_changed;
+    bool is_working;
 };
 
 static void
@@ -129,9 +122,8 @@ _imageData_alloc(const Settings *settings)
     _imageData_init_tbuf(imgdata);
     _imageData_init_chunks(imgdata);
     _imageData_init_view_fname(imgdata);
-
-    imgdata->state = DATA_STATE_WORKING;
-    imgdata->target_ticks = 0;
+    imgdata->has_changed = false;
+    imgdata->is_working = false;
 
     return imgdata;
 }
@@ -236,11 +228,8 @@ _imageData_set_prec(ImageData *imgdata, mp_bitcnt_t prec)
 }
 
 static void
-_imageData_update_chunk_pixels(
-  const ImageData *imgdata,
-  PixelChunk *chunk,
-  uint16_t idx_px_re,
-  uint16_t idx_px_im
+_imageData_update_chunk_pixel(
+  ImageData *imgdata, PixelChunk *chunk, uint16_t idx_px_re, uint16_t idx_px_im
 )
 {
     const ChunkData *const chunks = &imgdata->chunks;
@@ -281,6 +270,7 @@ _imageData_update_chunk_pixels(
     PixelData_iterate(px, buf, settings->max_itrs);
 
     px->state = PIXEL_STATE_VALID;
+    imgdata->has_changed = true;
 }
 
 static void
@@ -294,7 +284,9 @@ _imageData_apply_to_all_chunks(
 #pragma omp parallel for private(idx)
     for (idx = 0; idx < num_tot; ++idx) {
         PixelChunk *const chunk = &chunks->data[idx];
-        callback(chunk, chunks, vparams);
+        const ChunkCallbackParams params
+          = {.imgdata = imgdata, .chunks = chunks, .vparams = vparams};
+        callback(chunk, &params);
     }
 }
 
@@ -436,12 +428,12 @@ _imageData_update_pixels(ImageData *imgdata)
 }
 
 static bool
-_imageData_is_complete(ImageData *imgdata)
+_imageData_is_complete(const ImageData *imgdata)
 {
-    ChunkData *const chunks = &imgdata->chunks;
+    const ChunkData *const chunks = &imgdata->chunks;
     const uint16_t num_tot = chunks->num_re * chunks->num_im;
     for (uint16_t idx = 0; idx < num_tot; ++idx) {
-        PixelChunk *const chunk = &chunks->data[idx];
+        const PixelChunk *const chunk = &chunks->data[idx];
         if (chunk->state == CHUNK_STATE_INVALID) {
             return false;
         }
@@ -452,9 +444,7 @@ _imageData_is_complete(ImageData *imgdata)
 ImageData *
 ImageData_create(const Settings *settings)
 {
-    ImageData *const imgdata = _imageData_alloc(settings);
-    _imageData_update_pixels(imgdata);
-    return imgdata;
+    return _imageData_alloc(settings);
 }
 
 void
@@ -470,7 +460,6 @@ ImageData_free(ImageData *imgdata)
 void
 ImageData_register_action(ImageData *imgdata, enum Key key)
 {
-    CUTIL_RETURN_IF_VAL(imgdata->state, DATA_STATE_WORKING);
     switch (key) {
     case KEY_ZOOM_IN: {
         _imageData_register_zoom(imgdata, ZOOM_STAGES_POS);
@@ -500,31 +489,41 @@ ImageData_register_action(ImageData *imgdata, enum Key key)
         _imageData_register_view_load(imgdata);
     } break;
     default:
-        return;
+        break;
     }
-    imgdata->state = DATA_STATE_WORKING;
-}
-
-int
-ImageData_perform_action(ImageData *imgdata, unsigned int mseconds)
-{
-    if (imgdata->state == DATA_STATE_IDLE) {
-        msleep(mseconds);
-        return 0;
-    }
-    imgdata->target_ticks = SDL_GetTicks64() + mseconds;
-    _imageData_update_pixels(imgdata);
-    if (_imageData_is_complete(imgdata)) {
-        imgdata->state = DATA_STATE_IDLE;
-    }
-    return 1;
 }
 
 void
-ImageData_update_chunk(const ImageData *imgdata, PixelChunk *chunk)
+_imageData_resume_action_aux(ImageData *imgdata, uint64_t target_ticks)
+{
+    imgdata->is_working = true;
+    imgdata->target_ticks = target_ticks;
+    _imageData_update_pixels(imgdata);
+    if (_imageData_is_complete(imgdata)) {
+        imgdata->is_working = false;
+    }
+}
+
+void
+ImageData_resume_action(ImageData *imgdata, unsigned int mseconds)
+{
+    _imageData_resume_action_aux(imgdata, SDL_GetTicks64() + mseconds);
+}
+
+void
+ImageData_perform_action(ImageData *imgdata, enum Key key)
+{
+    CUTIL_RETURN_IF_VAL(imgdata->is_working, true);
+    ImageData_register_action(imgdata, key);
+    _imageData_resume_action_aux(imgdata, UINT64_MAX);
+}
+
+void
+ImageData_update_chunk(ImageData *imgdata, PixelChunk *chunk)
 {
     CUTIL_RETURN_IF_VAL(chunk->state, CHUNK_STATE_VALID);
 
+    const uint64_t target_ticks = imgdata->target_ticks;
     const ChunkData *const chunks = &imgdata->chunks;
     const ChunkParams *const params = &chunks->params;
     const uint16_t num_px_re = params->num_px_re;
@@ -532,10 +531,8 @@ ImageData_update_chunk(const ImageData *imgdata, PixelChunk *chunk)
 
     for (uint16_t idx_px_re = 0; idx_px_re < num_px_re; ++idx_px_re) {
         for (uint16_t idx_px_im = 0; idx_px_im < num_px_im; ++idx_px_im) {
-            _imageData_update_chunk_pixels(
-              imgdata, chunk, idx_px_re, idx_px_im
-            );
-            if (SDL_GetTicks64() > imgdata->target_ticks) {
+            _imageData_update_chunk_pixel(imgdata, chunk, idx_px_re, idx_px_im);
+            if (target_ticks != UINT64_MAX && SDL_GetTicks64() > target_ticks) {
                 return;
             }
         }
@@ -548,4 +545,18 @@ const float *
 ImageData_get_pixel_data(const ImageData *imgdata)
 {
     return imgdata->framebuf;
+}
+
+bool
+ImageData_has_changed(ImageData *imgdata)
+{
+    const bool res = imgdata->has_changed;
+    imgdata->has_changed = false;
+    return res;
+}
+
+bool
+ImageData_is_working(const ImageData *imgdata)
+{
+    return imgdata->is_working;
 }
