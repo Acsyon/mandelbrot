@@ -26,6 +26,7 @@ set(SOURCE_FILES
     net/package/settings.c
     net/package/string.c
     util/json.c
+    util/mpf.c
     util/num.c
     util/sys.c
     util/util.c

@@ -1,10 +1,11 @@
 #include <util/util.h>
 
 #include <cutil/io/log.h>
-#include <cutil/std/math.h>
 #include <cutil/std/stdlib.h>
 #include <cutil/string/builder.h>
 #include <cutil/util/macro.h>
+
+#include <util/mpf.h>
 
 char *
 util_concat_paths(const char *path1, const char *path2)
@@ -39,39 +40,12 @@ util_file_to_str(FILE *in)
     return fstr;
 }
 
-static char *
-_get_mpf_str_base10(mpf_srcptr mpf, mp_exp_t *p_exp)
-{
-    static const int BASE = 10;
-    const double log2 = log(2);
-    const double logb = log(abs(BASE));
-
-    const mp_bitcnt_t prec = mpf_get_prec(mpf);
-    const size_t maxlen_mantissa = prec * ceil(log2 / logb) + 1;
-    char *const mantissa_str = malloc(maxlen_mantissa * sizeof *mantissa_str);
-
-    mpf_get_str(mantissa_str, p_exp, BASE, maxlen_mantissa, mpf);
-
-    return mantissa_str;
-}
-
 char *
 util_mpf_to_str_base10(mpf_srcptr mpf)
 {
-    cutil_StringBuilder *const sb = cutil_StringBuilder_create();
-
-    const char *const sgn_str = (mpf_sgn(mpf) < 0) ? "-0." : "0.";
-    mp_exp_t exp;
-    char *const mantissa_str = _get_mpf_str_base10(mpf, &exp);
-
-    cutil_StringBuilder_appendf(sb, "%s", sgn_str);
-    cutil_StringBuilder_appendf(sb, "%s", mantissa_str);
-    cutil_StringBuilder_appendf(sb, "e%li", exp);
-
-    free(mantissa_str);
-
-    char *const res = cutil_StringBuilder_duplicate_string(sb);
-    cutil_StringBuilder_free(sb);
+    MpfStringBuilder *const mpfsb = MpfStringBuilder_create();
+    char *const res = MpfStringBuilder_to_string(mpfsb, mpf, 10);
+    MpfStringBuilder_free(mpfsb);
     return res;
 }
 
