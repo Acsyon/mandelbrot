@@ -45,18 +45,22 @@ static void
 _should_convertMpfToString_when_callUtilMpfToStrBase10(void)
 {
     /* Arrange */
+    const double assert_dbl = 123.375;
     mpf_t mpf;
-    mpf_init_set_d(mpf, 123.375);
+    mpf_init_set_d(mpf, assert_dbl);
 
     /* Act */
-    char *const result = util_mpf_to_str_base10(mpf);
+    char *const str = util_mpf_to_str_base10(mpf);
+    mpf_set_str(mpf, str, 10);
+    const double dbl = mpf_get_d(mpf);
 
     /* Assert */
-    TEST_ASSERT_NOT_NULL(result);
-    TEST_ASSERT_EQUAL_STRING("0.123375e3", result);
+    TEST_ASSERT_NOT_NULL(str);
+    TEST_ASSERT_EQUAL_STRING("0.123375e3", str);
+    TEST_ASSERT_EQUAL_FLOAT(assert_dbl, dbl);
 
     /* Cleanup */
-    free(result);
+    free(str);
     mpf_clear(mpf);
 }
 

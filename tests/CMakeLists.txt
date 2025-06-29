@@ -18,6 +18,7 @@ set(TEST_SOURCES
     net/test_connection.c
     net/test_package.c
     util/test_json.c
+    util/test_mpf.c
     util/test_num.c
     util/test_sys.c
     util/test_util.c
