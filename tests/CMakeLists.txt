@@ -16,6 +16,7 @@ set(TEST_SOURCES
     data/test_chunk.c
     data/test_pixel.c
     net/test_connection.c
+    net/test_package_string.c
     net/test_package.c
     util/test_json.c
     util/test_mpf.c

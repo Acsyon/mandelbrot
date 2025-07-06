@@ -9,7 +9,7 @@
 #include <app/settings.h>
 #include <util/util.h>
 
-#ifndef __STDC_IEC_559__
+#if defined(MANDELBROT_FORCE_IEC599) && !defined(__STDC_IEC_559__)
     #error "System does not support platform-independent floats"
 #endif
 

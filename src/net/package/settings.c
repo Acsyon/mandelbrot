@@ -10,8 +10,7 @@ Package *
 Package_from_settings(const Settings *settings)
 {
     char *const str = jsonutil_to_string(settings, &Settings_to_Json_void);
-    Package *const pkg = Package_from_string(str);
-    return pkg;
+    return Package_from_string_move(str);
 }
 
 void

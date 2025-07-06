@@ -17,12 +17,14 @@
  * vtable for different types of packages
  */
 typedef struct {
-    const char *name;
-    void *(*init)(const void *params);
-    void (*update)(void *data, uint64_t size, const void *params);
-    uint64_t (*size)(const void *data);
-    uint64_t (*hash)(const void *data);
-    bool supports_move;
+    const char *const name;
+    void *(*const init)(const void *params);
+    void (*const free)(void *pkgdata);
+    void (*const set)(void *pkgdata, const void *data);
+    void (*const get)(const void *pkgdata, void *data);
+    uint64_t (*const hash)(const void *pkgdata);
+    bool (*const send)(const void *pkgdata, const Connection *conn);
+    bool (*const recv)(void *pkgdata, const Connection *conn);
 } PackageType;
 
 /**
@@ -31,16 +33,18 @@ typedef struct {
 typedef struct _package Package;
 
 /**
- * Creates a new Package object of type `type` that can safely be freed. Memory
- * inside the Package has not yet been initialized (this must be done with
- * 'Package_init').
+ * Creates a new Package object of type `type` that can safely be freed.
+ * Allocates and initializes memory inside Package according to `params`. To be
+ * used inside constructors for the different Package types where checks for
+ * correct types should also happen.
  *
  * @param[in] type PackageType of newly created Package
+ * @param[in] params pointer to parameter object to initialize Package with
  *
- * @return new Package object of type `type`
+ * @return new Package object of type `type` initialized with `params`
  */
 Package *
-Package_create(const PackageType *type);
+Package_create(const PackageType *type, const void *params);
 
 /**
  * Destroys Package object `pkg` and frees memory.
@@ -49,6 +53,29 @@ Package_create(const PackageType *type);
  */
 void
 Package_free(Package *pkg);
+
+/**
+ * Updates data inside Package according to `data`. To be used inside setter
+ * functions for the different Package types where checks for correct types
+ * should also happen.
+ *
+ * @param[in] pkg Package to set data of
+ * @param[in] data pointer to data object to update data inside Package with
+ */
+void
+Package_set_data(Package *pkg, const void *data);
+
+/**
+ * Writes data inside Package to `data`. To be used inside getter functions for
+ * the different Package types where checks for correct types should also
+ * happen.
+ *
+ * @param[in] pkg Package to get data of
+ * @param[in] data pointer to data object to write data from inside the Package
+ * to
+ */
+void
+Package_get_data(const Package *pkg, void *data);
 
 /**
  * Returns the type of the Package.
@@ -61,26 +88,6 @@ const PackageType *
 Package_get_type(const Package *pkg);
 
 /**
- * Returns the size of the Package in bytes.
- *
- * @param[in] pkg Package to return size of
- *
- * @return size of the Package in bytes
- */
-uint64_t
-Package_get_size(const Package *pkg);
-
-/**
- * Returns a pointer to the data in the Package.
- *
- * @param[in] pkg Package to return data of
- *
- * @return pointer to the data in the Package
- */
-const void *
-Package_get_data(const Package *pkg);
-
-/**
  * Returns the hash of the data inside the Package.
  *
  * @param[in] pkg Package to return hash of
@@ -89,46 +96,6 @@ Package_get_data(const Package *pkg);
  */
 uint64_t
 Package_get_hash(const Package *pkg);
-
-/**
- * Allocates and initializes memory inside Package according to `params`. To be
- * used inside constructors for the different Package types where checks for
- * correct types should also happen.
- *
- * @param[in] pkg Package to initialize
- * @param[in] params pointer to parameter object to initialize Package with
- */
-void
-Package_init(Package *pkg, const void *params);
-
-/**
- * Takes ownership of `data`, i.e., data inside the package will become `data`
- * and it will be freed by 'Package_free'. To be used inside constructors for
- * the different Package types where checks for correct types should also
- * happen.
- *
- * @param[in] pkg Package to initialize
- * @param[in] data pointer to data object to initialize Package with
- *
- * @note May not be supported by all types.
- */
-void
-Package_move_init(Package *pkg, void *data);
-
-/**
- * Updates memory (without reallocating) inside Package according to `params`.
- * This serves to minimize the number of memory allocations. To be used inside
- * update methods for the different Package types where checks for correct types
- * should also happen.
- *
- * @param[in] pkg Package to update
- * @param[in] params pointer to parameter object to update memory inside Package
- * with
- *
- * @note May not be supported by all types.
- */
-void
-Package_update(Package *pkg, const void *params);
 
 /**
  * Returns whether or not the hash inside the Package corresponds to the data.

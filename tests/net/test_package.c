@@ -4,6 +4,8 @@
 
 #include <cutil/std/stdlib.h>
 #include <cutil/std/string.h>
+#include <cutil/util/macro.h>
+
 #include <net/connection.h>
 #include <net/package.h>
 #include <net/package/string.h>
@@ -14,79 +16,122 @@
 
 #define ASSERT_STR "TEST data String"
 
+struct _testData {
+    const void *data;
+};
+
+static void *
+_init(const void *params)
+{
+    struct _testData *const data = malloc(sizeof *data);
+    data->data = params;
+    return data;
+}
+
+static void
+_free(void *pkgdata)
+{
+    CUTIL_RETURN_IF_NULL(pkgdata);
+
+    free(pkgdata);
+}
+
+void
+_set(void *pkgdata, const void *data)
+{
+    struct _testData *const pkgtd = pkgdata;
+    pkgtd->data = data;
+}
+
+void
+_get(const void *pkgdata, void *data)
+{
+    struct _testData *const td = data;
+    *td = *(const struct _testData *) pkgdata;
+}
+
+static uint64_t
+_hash(const void *data)
+{
+    const struct _testData *const td = data;
+    return (uint64_t) td->data;
+}
+
+static bool
+_send(const void *pkgdata, const Connection *conn)
+{
+    const struct _testData *const pkgtd = pkgdata;
+    const uint64_t ptr = (uint64_t) pkgtd->data;
+    if (Connection_send(conn, &ptr, sizeof ptr) != (int64_t) sizeof ptr) {
+        return false;
+    }
+    return true;
+}
+
+static bool
+_recv(void *pkgdata, const Connection *conn)
+{
+    struct _testData *const pkgtd = pkgdata;
+    uint64_t ptr = 0;
+    if (Connection_receive(conn, &ptr, sizeof ptr) != (int64_t) sizeof ptr) {
+        return false;
+    }
+    pkgtd->data = (const void *) ptr;
+    return true;
+}
+
+static const PackageType PACKAGE_TYPE_TEST_OBJECT = {
+  .name = "TEST",
+  .init = &_init,
+  .free = &_free,
+  .set = &_set,
+  .get = &_get,
+  .hash = &_hash,
+  .send = &_send,
+  .recv = &_recv,
+};
+const PackageType *const PACKAGE_TYPE_TEST = &PACKAGE_TYPE_TEST_OBJECT;
+
+static const void *
+_package_return_data(Package *pkg)
+{
+    struct _testData pkgtd;
+    Package_get_data(pkg, &pkgtd);
+    return pkgtd.data;
+}
+
 static void
 _should_createPackage_when_provideType(void)
 {
     /* Arrange */
-    const PackageType *const type = PACKAGE_TYPE_STRING;
+    const PackageType *const type = PACKAGE_TYPE_TEST;
 
     /* Act */
-    Package *const pkg = Package_create(type);
+    Package *const pkg = Package_create(type, NULL);
 
     /* Assert */
     TEST_ASSERT_EQUAL_PTR(type, Package_get_type(pkg));
-    TEST_ASSERT_EQUAL_UINT64(0, Package_get_size(pkg));
-    TEST_ASSERT_NULL(Package_get_data(pkg));
+    TEST_ASSERT_NULL(_package_return_data(pkg));
     TEST_ASSERT_EQUAL_UINT64(0, Package_get_hash(pkg));
+    TEST_ASSERT_TRUE(Package_verify(pkg));
 
     /* Cleanup */
     Package_free(pkg);
 }
 
 static void
-_should_initStringData_when_useInit(void)
+_should_createPackage_when_provideTypeAndData(void)
 {
     /* Arrange */
     const char *const assert_str = ASSERT_STR;
-    const uint64_t assert_size = sizeof ASSERT_STR;
-    const PackageType *const type = PACKAGE_TYPE_STRING;
-    Package *const pkg = Package_create(type);
+    const PackageType *const type = PACKAGE_TYPE_TEST;
 
     /* Act */
-    Package_init(pkg, assert_str);
+    Package *const pkg = Package_create(type, assert_str);
 
     /* Assert */
-    TEST_ASSERT_EQUAL_UINT64(assert_size, Package_get_size(pkg));
-    TEST_ASSERT_EQUAL_STRING(assert_str, Package_get_data(pkg));
-    TEST_ASSERT_NOT_EQUAL_UINT64(0, Package_get_hash(pkg));
-
-    /* Cleanup */
-    Package_free(pkg);
-}
-
-static void
-_should_initStringData_when_useMoveInit(void)
-{
-    /* Arrange */
-    char *const assert_str = cutil_strdup(ASSERT_STR);
-    const uint64_t assert_size = sizeof ASSERT_STR;
-    const PackageType *const type = PACKAGE_TYPE_STRING;
-    Package *const pkg = Package_create(type);
-
-    /* Act */
-    Package_move_init(pkg, assert_str);
-
-    /* Assert */
-    TEST_ASSERT_EQUAL_UINT64(assert_size, Package_get_size(pkg));
-    TEST_ASSERT_EQUAL_STRING(assert_str, Package_get_data(pkg));
-    TEST_ASSERT_NOT_EQUAL_UINT64(0, Package_get_hash(pkg));
-
-    /* Cleanup */
-    Package_free(pkg);
-}
-
-static void
-_should_verifyCorrectly_when_dataIsValid(void)
-{
-    /* Arrange */
-    const char *const assert_str = ASSERT_STR;
-    const PackageType *const type = PACKAGE_TYPE_STRING;
-    Package *const pkg = Package_create(type);
-
-    /* Act */
-    Package_init(pkg, assert_str);
-
-    /* Assert */
+    TEST_ASSERT_EQUAL_PTR(assert_str, _package_return_data(pkg));
+    TEST_ASSERT_EQUAL_UINT64(assert_str, Package_get_hash(pkg));
     TEST_ASSERT_TRUE(Package_verify(pkg));
 
     /* Cleanup */
@@ -101,15 +146,14 @@ _server_thread_function(void *arg)
     Connection_accept(srv_conn);
 
     const char *const assert_str = ASSERT_STR;
-    const PackageType *const type = PACKAGE_TYPE_STRING;
-    Package *const pkg = Package_create(type);
-    Package_init(pkg, assert_str);
+    const PackageType *const type = PACKAGE_TYPE_TEST;
+    Package *const pkg = Package_create(type, assert_str);
 
     /* Act */
-    const bool succesful = Package_send(pkg, srv_conn);
+    const bool was_successful = Package_send(pkg, srv_conn);
 
     /* Assert */
-    TEST_ASSERT_TRUE(succesful);
+    TEST_ASSERT_TRUE(was_successful);
 
     /* Cleanup */
     Package_free(pkg);
@@ -124,18 +168,17 @@ _client_thread_function(void *arg)
     Connection *const clt_conn = arg;
 
     const char *const assert_str = ASSERT_STR;
-    const uint64_t assert_size = sizeof ASSERT_STR;
-    const PackageType *const type = PACKAGE_TYPE_STRING;
-    Package *const pkg = Package_create(type);
+    const PackageType *const type = PACKAGE_TYPE_TEST;
+    Package *const pkg = Package_create(type, assert_str);
 
     /* Act */
-    const bool succesful = Package_receive(pkg, clt_conn);
+    const bool was_successful = Package_receive(pkg, clt_conn);
 
     /* Assert */
-    TEST_ASSERT_TRUE(succesful);
-    TEST_ASSERT_EQUAL_UINT64(assert_size, Package_get_size(pkg));
-    TEST_ASSERT_EQUAL_STRING(assert_str, Package_get_data(pkg));
-    TEST_ASSERT_NOT_EQUAL_UINT64(0, Package_get_hash(pkg));
+    TEST_ASSERT_TRUE(was_successful);
+    TEST_ASSERT_EQUAL_PTR(assert_str, _package_return_data(pkg));
+    TEST_ASSERT_EQUAL_UINT64(assert_str, Package_get_hash(pkg));
+    TEST_ASSERT_TRUE(Package_verify(pkg));
 
     /* Cleanup */
     Package_free(pkg);
@@ -186,9 +229,7 @@ main(void)
     UNITY_BEGIN();
 
     RUN_TEST(_should_createPackage_when_provideType);
-    RUN_TEST(_should_initStringData_when_useInit);
-    RUN_TEST(_should_initStringData_when_useMoveInit);
-    RUN_TEST(_should_verifyCorrectly_when_dataIsValid);
+    RUN_TEST(_should_createPackage_when_provideTypeAndData);
     RUN_TEST(_should_sendDataCorrectly_when_haveValidConnection);
 
     connection_global_cleanup();

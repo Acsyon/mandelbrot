@@ -24,7 +24,41 @@ extern const PackageType *const PACKAGE_TYPE_STRING;
  * @note Takes ownership of `str` so it is freed together with Package.
  */
 Package *
-Package_from_string(char *str);
+Package_from_string_move(char *str);
+
+/**
+ * Creates a new Package object for sending and receiving strings.
+ *
+ * @param[in] len length of input string
+ * @param[in] str string to initialize Package with
+ *
+ * @return new Package object for sending and receiving strings
+ *
+ * @note Takes ownership of `str` so it is freed together with Package.
+ */
+Package *
+Package_from_string_move_num(size_t len, char *str);
+
+/**
+ * Creates a new Package object for sending and receiving strings.
+ *
+ * @param[in] str string to initialize Package with
+ *
+ * @return new Package object for sending and receiving strings
+ */
+Package *
+Package_from_string_copy(const char *str);
+
+/**
+ * Creates a new Package object for sending and receiving strings.
+ *
+ * @param[in] len length of input string
+ * @param[in] str string to initialize Package with
+ *
+ * @return new Package object for sending and receiving strings
+ */
+Package *
+Package_from_string_copy_num(size_t len, const char *str);
 
 /**
  * Returns a pointer to the string inside the Package.
